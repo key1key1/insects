@@ -131,7 +131,7 @@
   .hp-fill{ height:100%; border-radius:999px; transition:width .35s; }
   .hp-num{ font-size:.7rem; color:var(--ink-soft); margin-top:3px; }
 
-  .battle-log{ background:#fff; border:3px solid var(--line); border-radius:18px; padding:12px 14px; height:150px; overflow-y:auto; font-size:.82rem; margin-bottom:12px; }
+  .battle-log{ background:#fff; border:3px solid var(--line); border-radius:18px; padding:12px 14px; height:170px; overflow-y:auto; font-size:1rem; line-height:1.5; margin-bottom:12px; }
   .battle-log p{ margin:3px 0; }
 
   .skill-btn{ width:100%; text-align:left; background:var(--card); border:3px solid var(--line); border-radius:18px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; margin-bottom:9px; transition:transform .08s; font-family:'Gowun Dodum',sans-serif; }
@@ -141,11 +141,17 @@
   .skill-btn .sdesc{ font-size:.75rem; color:var(--ink-soft); }
   .skill-btn .spower{ font-family:'Jua',sans-serif; background:var(--cream); color:var(--coral-dark); padding:5px 10px; border-radius:10px; flex-shrink:0; }
   .skill-btn .spower.defense{ color:var(--sky-dark); background:#EAFBFF; }
+  .trait-tag{ font-family:'Gowun Dodum',sans-serif; font-size:.68rem; font-weight:normal; padding:2px 7px; border-radius:999px; vertical-align:middle; margin-left:2px; }
+  .trait-tag.attack{ background:#FFE9E4; color:var(--coral-dark); }
+  .trait-tag.defense{ background:#E4F4FF; color:var(--sky-dark); }
 
   .result-banner{ text-align:center; margin:20px 0; }
   .result-banner .big{ font-family:'Jua',sans-serif; font-size:1.4rem; color:var(--leaf-dark); }
 
   .load-error{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  .rules-fab{ position:fixed; right:14px; bottom:14px; z-index:30; background:var(--ink); color:#fff; border:none; border-radius:999px; padding:10px 16px; font-family:'Jua',sans-serif; font-size:.8rem; box-shadow:0 4px 10px rgba(0,0,0,.25); cursor:pointer; }
+  .exit-fab{ position:fixed; left:14px; bottom:14px; z-index:30; background:var(--coral-dark); color:#fff; border:none; border-radius:999px; padding:10px 16px; font-family:'Jua',sans-serif; font-size:.8rem; box-shadow:0 4px 10px rgba(0,0,0,.25); cursor:pointer; }
+  .streak-note{ text-align:center; font-size:.72rem; color:var(--ink-soft); margin:-4px 0 8px; }
   footer{ text-align:center; padding:26px 0; font-size:.7rem; color:#c2b190; }
 </style>
 </head>
@@ -273,24 +279,131 @@ function envModifiers(insect, env){
 function calcDamage(attacker, defender, skill, atkMult, defMult){
   const base = skill.power*0.75 + attacker.stats.atk*0.35;
   const defVal = defender.stats.def*defMult*0.4;
-  let raw = Math.max(6, base-defVal);
+  const floor = Math.max(6, defender.stats.hp*0.05);
+  let raw = Math.max(floor, base-defVal);
   raw *= atkMult;
   raw *= 0.9 + Math.random()*0.2;
+  const cap = defender.stats.hp*0.33; // 한 방에 상대 체력의 33% 이상은 못 깎음 (즉사 방지)
+  raw = Math.min(raw, cap);
   return Math.round(raw);
 }
-/* 크리티컬: 자기 활동 시간대(밤/낮 등)와 환경이 맞으면 확률이 더 높아짐 */
-function rollCrit(attacker, env){
+/* 종합 전투력 (언더독 보정 판단용) */
+function powerScore(insect){
+  return insect.stats.hp*0.5 + insect.stats.atk + insect.stats.def*0.5 + insect.stats.spd*0.3;
+}
+
+/* 공격기/방어기가 2개 이상일 때, 위력을 비교해 자동으로 특성을 부여
+   (데이터를 따로 안 건드리고 위력 숫자만으로 판별) */
+function attackVariant(insect, skill){
+  const atkSkills = insect.skills.filter(s => s.type === "attack");
+  if (atkSkills.length < 2) return "normal";
+  const maxPower = Math.max(...atkSkills.map(s => s.power));
+  return skill.power < maxPower ? "precise" : "normal";
+}
+function defenseVariant(insect, skill){
+  const defSkills = insect.skills.filter(s => s.type === "defense");
+  if (defSkills.length < 2) return "normal";
+  const maxPower = Math.max(...defSkills.map(s => s.power));
+  return skill.power >= maxPower ? "evasive" : "recovery";
+}
+/* 방어기가 실제로 회복시킬 양: 데이터에 heal이 명시돼 있으면 그 값 우선,
+   아니면 '회복형'일 때만 상대 최대체력의 10%만큼 자동 회복 */
+function effectiveDefenseHeal(insect, skill){
+  if (skill.heal) return skill.heal;
+  if (defenseVariant(insect, skill) === "recovery") return Math.max(4, Math.round(insect.stats.hp * 0.10));
+  return 0;
+}
+/* 기술 옆에 붙일 짧은 특성 단어 (버튼에 표시용) */
+function skillTraitLabel(insect, skill){
+  if (skill.type === "attack"){
+    return attackVariant(insect, skill) === "precise" ? "정밀" : null;
+  }
+  const v = defenseVariant(insect, skill);
+  if (v === "evasive") return "회피";
+  if (v === "recovery") return "회복";
+  return null;
+}
+
+/* 날씨별 기본 불안정도 (명중판정에 사용) */
+const WEATHER_MISS_BASE = { 맑음:0.04, 흐림:0.06, 비:0.10, 바람:0.12, 무더위:0.08 };
+
+/* 명중 판정: 빗나감(miss) / 스치듯 맞음(graze) / 제대로 맞음(hit)
+   날씨(불안정할수록 위험) · 서식지 일치(불리함 절반으로) · 시간대 일치(정확도↑) ·
+   약한 날씨(추가 페널티) · 언더독 보정(강자가 약자에게 방심) ·
+   '정밀' 공격기(더 안정적으로 명중)를 모두 반영 */
+function computeAttackRoll(attacker, defender, env, skill){
+  const habOK = attacker.hab.includes(env.hab);
+  const weatherBase = WEATHER_MISS_BASE[env.weather] || 0.05;
+  let missChance = 0.06 + weatherBase * (habOK ? 0.4 : 1);
+  if (attacker.weakWeather === env.weather) missChance += 0.10;
+  if (attacker.time === env.time) missChance -= 0.03;
+  const myScore = powerScore(attacker), theirScore = powerScore(defender);
+  if (myScore > theirScore * 1.12) missChance += 0.13; // 훨씬 강한 쪽이 방심
+  if (skill && attackVariant(attacker, skill) === "precise") missChance -= 0.07; // 정밀 공격 보너스
+  missChance = Math.max(0.02, Math.min(0.40, missChance));
+
+  let grazeChance = 0.12 + weatherBase * 0.6 * (habOK ? 0.5 : 1);
+  if (skill && attackVariant(attacker, skill) === "precise") grazeChance -= 0.05;
+  grazeChance = Math.max(0.03, Math.min(0.30, grazeChance));
+
+  const roll = Math.random();
+  if (roll < missChance) return "miss";
+  if (roll < missChance + grazeChance) return "graze";
+  return "hit";
+}
+/* 크리티컬: 자기 활동 시간대가 환경과 맞으면 확률↑, 상대보다 훨씬 약할 때(언더독)도 확률↑ */
+function rollCrit(attacker, defender, env){
   let chance = 0.15;
   if (attacker.time === env.time) chance += 0.08;
-  return Math.random() < chance;
+  const myScore = powerScore(attacker), theirScore = powerScore(defender);
+  if (myScore < theirScore * 0.92) chance += 0.28; // 언더독 보너스
+  return Math.random() < Math.min(0.55, chance);
 }
-/* 회피: 방어 기술을 썼을 때만 판정. 자기 시간대와 맞거나, 상대보다 빠르면 확률 상승 */
-function rollDodge(defender, env, defSpdEff, atkSpdEff){
+/* 회피: 방어 기술을 썼을 때만 판정. 자기 시간대와 맞거나, 상대보다 빠르면 확률 상승.
+   '회피형' 방어기는 추가 보너스를 받음 */
+function rollDodge(defender, env, defSpdEff, atkSpdEff, skill){
   let chance = 0.30;
   if (defender.time === env.time) chance += 0.15;
   if (defSpdEff > atkSpdEff) chance += 0.10;
-  return Math.random() < chance;
+  if (skill && defenseVariant(defender, skill) === "evasive") chance += 0.12;
+  return Math.random() < Math.min(0.75, chance);
 }
+
+/* 기적의 생존: 상대보다 훨씬 약한(전투력 0.7배 미만) 쪽이 이번 공격으로 쓰러질 뻔하면,
+   대결당 한 번만 체력 1로 버텨낸다 */
+function applyDamageWithMiracle(ctx, side, dmg){
+  const b = state.battle;
+  const self = side === "player" ? b.player : b.enemy;
+  const opp = side === "player" ? b.enemy : b.player;
+  const curHP = side === "player" ? ctx.pHP : ctx.eHP;
+  let newHP = Math.max(0, curHP - dmg);
+  const usedKey = side === "player" ? "playerMiracleUsed" : "enemyMiracleUsed";
+  if (newHP <= 0 && curHP > 0 && !b[usedKey] && powerScore(self) < powerScore(opp) * 0.7){
+    b[usedKey] = true;
+    newHP = 1;
+    ctx.log.push(`✨ ${self.name}가 기적적으로 버텨내며 쓰러지지 않았다! (체력 1로 생존)`);
+  }
+  if (side === "player") ctx.pHP = newHP; else ctx.eHP = newHP;
+}
+
+/* 연속 공격 피로 페널티: 공격을 연달아 낼수록 체력이 조금씩 깎임 (죽지는 않음) */
+function fatigueFrac(streak){
+  if (streak <= 1) return 0;
+  if (streak === 2) return 0.03;
+  if (streak === 3) return 0.06;
+  return 0.10; // 4회 이상
+}
+function applyFatigue(ctx, side, streak){
+  const frac = fatigueFrac(streak);
+  if (frac <= 0) return;
+  const b = state.battle;
+  const self = side === "player" ? b.player : b.enemy;
+  const dmg = Math.max(2, Math.round(self.stats.hp * frac));
+  if (side === "player") ctx.pHP = Math.max(1, ctx.pHP - dmg);
+  else ctx.eHP = Math.max(1, ctx.eHP - dmg);
+  ctx.log.push(`   … ${self.name}가 연속 공격(${streak}회째)으로 지쳐 체력을 ${dmg} 잃었다.`);
+}
+
 
 /* ============================== 즐겨찾기 (localStorage, 최대 10종) ============================== */
 const FAV_KEY = "insectFavorites";
@@ -322,7 +435,7 @@ let state = {
   tab: "dex",
   favMessage: null,
   dex: { query:"", orderFilter:"all", detailId:null },
-  battle: { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, round:1, turnStage:"p1-choose", playerChoice:null, enemyChoice:null, log:[], winner:null, busy:false, pickOrderFilter:"all", pickFavOnly:false }
+  battle: { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, round:1, turnStage:"p1-choose", playerChoice:null, enemyChoice:null, log:[], winner:null, busy:false, pickOrderFilter:"all", pickFavOnly:false, playerMiracleUsed:false, enemyMiracleUsed:false, playerAtkStreak:0, enemyAtkStreak:0, showRules:false }
 };
 
 /* ============================== 렌더 ============================== */
@@ -331,6 +444,39 @@ const app = document.getElementById("app");
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
 function closeDetail(){ state.dex.detailId = null; render(); }
+function closeRules(){ state.battle.showRules = false; render(); }
+
+function renderRulesModal(){
+  if (!state.battle.showRules) return "";
+  return `
+    <div class="modal-overlay" onclick="closeRules()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeRules()">✕</button>
+        <h2 style="margin-top:0">⚔️ 대결 규칙</h2>
+        <div class="section-box"><p class="head" style="color:var(--leaf-dark)">🌦️ 환경 효과</p>
+          <p>서식지가 맞으면 공격력·방어력이 오르고, 활동 시간대가 맞으면 속도·명중률·크리티컬 확률이 올라요. 날씨가 험할수록(비·바람 등) 빗나갈 확률이 오르지만, 자기 서식지에서 싸우면 그 영향이 절반으로 줄어요. '약한 날씨'가 걸리면 능력치가 오히려 낮아져요.</p>
+        </div>
+        <div class="section-box"><p class="head" style="color:var(--coral-dark)">🎯 명중 판정</p>
+          <p>모든 공격은 <b>빗나감 / 스치듯 맞음(피해 절반) / 제대로 맞음</b> 셋 중 하나로 정해져요. 날씨·서식지·시간대에 따라 확률이 달라져요.</p>
+        </div>
+        <div class="section-box"><p class="head">🏷️ 기술 특성 (정밀 · 회피 · 회복)</p>
+          <p>같은 종류(공격/방어) 기술이 2개 이상이면 위력이 낮은 쪽에 특별한 장점이 붙어요. 공격기 중 위력이 낮은 쪽은 <b>정밀</b>(잘 안 빗나감), 방어기 중 위력이 높은 쪽은 <b>회피</b>(완전히 피할 확률 대폭 상승), 위력이 낮은 쪽은 <b>회복</b>(맞아도 체력을 회복)이에요. 버튼 이름 옆 작은 글자로 표시돼요.</p>
+        </div>
+        <div class="section-box"><p class="head">💥 크리티컬 &amp; 🛡️ 회피</p>
+          <p>제대로 맞았을 땐 15%(+시간대 보너스) 확률로 크리티컬(피해 1.5배)! 방어 기술을 쓰면 30%(+시간대·속도 보너스) 확률로 완전히 피하고, 못 피해도 피해를 65% 줄여요.</p>
+        </div>
+        <div class="section-box"><p class="head" style="color:var(--sun-dark)">🐜 언더독 보정</p>
+          <p>종합 능력치가 상대보다 많이 낮은 쪽은 크리티컬 확률이 크게 올라요. 반대로 훨씬 강한 쪽은 방심해서 빗나갈 확률이 올라요. 또한 한 번의 공격으로는 상대 체력의 33%까지만 깎을 수 있어서, 아무리 강해도 한 방에 끝내기는 어려워요.</p>
+        </div>
+        <div class="section-box"><p class="head" style="color:var(--sky-dark)">✨ 기적의 생존</p>
+          <p>상대보다 훨씬 약한 곤충은 대결당 딱 한 번, 쓰러질 위기의 순간에 체력 1로 버텨내요.</p>
+        </div>
+        <div class="section-box"><p class="head">😮‍💨 연속 공격 피로</p>
+          <p>공격 기술을 연달아 내면 지쳐서 스스로 체력이 조금씩 줄어요 — 2연속은 살짝, 3연속은 더, 4연속 이상은 가장 많이요. 방어 기술을 한 번 쓰면 초기화돼요. 지쳐서 쓰러지지는 않아요.</p>
+        </div>
+      </div>
+    </div>`;
+}
 
 function chipRow(activeKey, includeAll, onSelectAttr){
   let html = `<div class="chip-row">`;
@@ -443,11 +589,14 @@ function renderDetailModal(insect){
       <div class="stat-track"><div class="stat-fill" style="width:${value}%;background:${color}"></div></div>
       <span class="stat-num">${value}</span>
     </div>`;
-  const skills = insect.skills.map(s=>`
+  const skills = insect.skills.map(s=>{
+    const trait = skillTraitLabel(insect, s);
+    return `
     <div class="skill-item">
-      <span class="skill-power">${s.power}</span>
-      <div><div class="sname">${esc(s.name)}</div><div class="sdesc">${esc(s.desc)}</div></div>
-    </div>`).join("");
+      <span class="skill-power">${s.type==='defense' ? '🛡️' : s.power}</span>
+      <div><div class="sname">${esc(s.name)}${trait ? ` <span class="trait-tag ${s.type}">${trait}</span>` : ""}</div><div class="sdesc">${esc(s.desc)}</div></div>
+    </div>`;
+  }).join("");
   const habTags = insect.hab.map(h=>`<span class="tag-pill">${HAB_ICON[h]} ${h}</span>`).join("");
 
   return `
@@ -559,7 +708,11 @@ function renderBattle(){
             <button class="btn btn-coral" data-continue-handoff="1">확인했어요, 계속하기 →</button>
           </div>`;
       } else if (b.turnStage === "resolving"){
-        bodyHtml = `<p style="text-align:center;padding:30px 0;font-family:'Jua',sans-serif;color:var(--leaf-dark)">⚔️ 결과 공개! ...</p>`;
+        bodyHtml = `
+          <div style="text-align:center;padding:20px 0">
+            <p style="font-family:'Jua',sans-serif;color:var(--leaf-dark);margin:0 0 14px">🔓 두 곤충 모두 기술을 골랐어요!</p>
+            <button class="btn btn-coral" data-resolve-round="1">⚔️ 결과 공개하기!</button>
+          </div>`;
       } else if (b.turnStage === "cpu-thinking"){
         bodyHtml = `<p style="text-align:center;padding:30px 0;color:var(--ink-soft)">🤖 상대가 기술을 고르는 중...</p>`;
       } else {
@@ -569,15 +722,20 @@ function renderBattle(){
         const turnLabel = isHumanTurn
           ? `🎯 ${esc(actor.name)}${b.mode==="pvp" ? (side==="player" ? " (플레이어 1)" : " (플레이어 2)") : ""}, 기술을 고르세요!`
           : `🤖 ${esc(actor.name)}가 기술을 고르는 중...`;
+        const streak = side === "player" ? b.playerAtkStreak : b.enemyAtkStreak;
         bodyHtml = `
           <p style="text-align:center;font-family:'Jua',sans-serif;color:var(--leaf-dark);margin:2px 0 10px">${turnLabel}</p>
+          ${streak >= 2 ? `<p class="streak-note">😮‍💨 공격을 ${streak}번 연달아 냈어요 — 한 번 더 공격하면 더 지쳐요. 방어로 초기화할 수 있어요.</p>` : ``}
           ${isHumanTurn ? `
           <div>
-            ${actor.skills.map((s,idx)=>`
+            ${actor.skills.map((s,idx)=>{
+              const trait = skillTraitLabel(actor, s);
+              return `
               <button class="skill-btn" data-use-skill-side="${side}" data-use-skill-idx="${idx}" ${b.busy?"disabled":""}>
-                <div><div class="sname">${esc(s.name)}</div><div class="sdesc">${esc(s.desc)}</div></div>
+                <div><div class="sname">${esc(s.name)}${trait ? ` <span class="trait-tag ${s.type}">${trait}</span>` : ``}</div><div class="sdesc">${esc(s.desc)}</div></div>
                 <span class="spower ${s.type==='defense'?'defense':''}">${s.type==='defense' ? '🛡️ 방어' : '⚔️ '+s.power}</span>
-              </button>`).join("")}
+              </button>`;
+            }).join("")}
           </div>` : `<p style="text-align:center;color:var(--ink-soft);font-size:.85rem">잠시만 기다려주세요...</p>`}`;
       }
     } else {
@@ -631,7 +789,9 @@ function render(){
   } else {
     body = renderBattle();
   }
-  app.innerHTML = favToast() + renderHeader() + body + `<footer>${INSECTS.length}종의 곤충 표본 · 대결은 재미를 위한 상상 시뮬레이션이에요<br><a href="admin.html" style="color:#c2b190;text-decoration:underline">⚙️ 관리자</a></footer>`;
+  app.innerHTML = favToast() + renderHeader() + body
+    + (state.tab==="battle" ? `<button class="exit-fab" data-exit-battle="1">✕ 나가기</button><button class="rules-fab" data-toggle-rules="1">📖 규칙</button>${renderRulesModal()}` : "")
+    + `<footer>${INSECTS.length}종의 곤충 표본 · 대결은 재미를 위한 상상 시뮬레이션이에요<br><a href="admin.html" style="color:#c2b190;text-decoration:underline">⚙️ 관리자</a></footer>`;
 
   if ((state.tab==="dex" || state.tab==="favorites") && dataSource==="ready"){
     document.getElementById("detailSlot").innerHTML = renderDetailModal(INSECTS.find(i=>i.id===state.dex.detailId));
@@ -697,8 +857,15 @@ document.addEventListener("click", (e)=>{
     state.battle.turnStage = "p2-choose";
     render(); return;
   }
+  if (el = t("data-toggle-rules")){ state.battle.showRules = true; render(); return; }
+  if (el = t("data-resolve-round")){ resolveRound(); return; }
+  if (el = t("data-exit-battle")){
+    state.battle = { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, round:1, turnStage:"p1-choose", playerChoice:null, enemyChoice:null, log:[], winner:null, busy:false, pickOrderFilter:"all", pickFavOnly:false, playerMiracleUsed:false, enemyMiracleUsed:false, playerAtkStreak:0, enemyAtkStreak:0, showRules:false };
+    state.tab = "dex";
+    render(); return;
+  }
   if (el = t("data-reset-battle")){
-    state.battle = { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, round:1, turnStage:"p1-choose", playerChoice:null, enemyChoice:null, log:[], winner:null, busy:false, pickOrderFilter:"all", pickFavOnly:false };
+    state.battle = { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, round:1, turnStage:"p1-choose", playerChoice:null, enemyChoice:null, log:[], winner:null, busy:false, pickOrderFilter:"all", pickFavOnly:false, playerMiracleUsed:false, enemyMiracleUsed:false, playerAtkStreak:0, enemyAtkStreak:0, showRules:false };
     render(); return;
   }
   if (el = t("data-rematch")){ state.battle.phase="draw-env"; state.battle.env=null; render(); return; }
@@ -738,6 +905,10 @@ function startBattle(){
   b.playerChoice = null;
   b.enemyChoice = null;
   b.turnStage = "p1-choose";
+  b.playerMiracleUsed = false;
+  b.enemyMiracleUsed = false;
+  b.playerAtkStreak = 0;
+  b.enemyAtkStreak = 0;
   b.phase = "battling";
   render();
 }
@@ -770,7 +941,6 @@ function chooseSkill(side, idx){
         b.turnStage = "resolving";
         b.busy = false;
         render();
-        setTimeout(resolveRound, 650);
       }, 700);
     } else {
       b.turnStage = "handoff";
@@ -780,11 +950,10 @@ function chooseSkill(side, idx){
     b.enemyChoice = b.enemy.skills[idx];
     b.turnStage = "resolving";
     render();
-    setTimeout(resolveRound, 650);
   }
 }
 
-/* 공격 기술이 방어 기술과 맞붙었을 때: 크리티컬/회피 판정을 포함해 한쪽 방향을 처리 */
+/* 공격 기술이 방어 기술과 맞붙었을 때: 명중판정→크리티컬→회피 순으로 처리 */
 function resolveAttackVsDefense(ctx, attackerSide){
   const b = state.battle;
   const atk = attackerSide === "player" ? b.player : b.enemy;
@@ -797,19 +966,26 @@ function resolveAttackVsDefense(ctx, attackerSide){
   const defSpdEff = attackerSide === "player" ? ctx.eSpd : ctx.pSpd;
   const icon = attackerSide === "player" ? "🦋" : "🐜";
 
-  let dmg = calcDamage(atk, def, atkSkill, atkMods.atkMult, defMods.defMult);
-  const crit = rollCrit(atk, b.env);
-  if (crit) dmg = Math.round(dmg * 1.5);
-  const dodged = rollDodge(def, b.env, defSpdEff, atkSpdEff);
+  const outcome = computeAttackRoll(atk, def, b.env, atkSkill);
   let finalDmg = 0;
 
-  if (dodged){
-    ctx.log.push(`🛡️ ${atk.name}의 「${atkSkill.name}」! ${def.name}가 「${defSkill.name}」로 완전히 피했다!`);
+  if (outcome === "miss"){
+    ctx.log.push(`${icon} ${atk.name}의 「${atkSkill.name}」! 완전히 빗나갔다! (${def.name}는 「${defSkill.name}」로 여유롭게 버텼다)`);
   } else {
-    finalDmg = Math.max(1, Math.round(dmg * 0.35));
-    if (attackerSide === "player") ctx.eHP = Math.max(0, ctx.eHP - finalDmg);
-    else ctx.pHP = Math.max(0, ctx.pHP - finalDmg);
-    ctx.log.push(`${icon} ${atk.name}의 「${atkSkill.name}」!${crit ? " 💥 급소를 노렸지만" : ""} ${def.name}가 「${defSkill.name}」로 대부분 막아내고 ${finalDmg}의 피해만 입었다.`);
+    let dmg = calcDamage(atk, def, atkSkill, atkMods.atkMult, defMods.defMult);
+    const crit = rollCrit(atk, def, b.env);
+    if (crit) dmg = Math.round(dmg * 1.5);
+    if (outcome === "graze") dmg = Math.round(dmg * 0.5);
+    const dodged = rollDodge(def, b.env, defSpdEff, atkSpdEff, defSkill);
+
+    if (dodged){
+      ctx.log.push(`🛡️ ${atk.name}의 「${atkSkill.name}」! ${def.name}가 「${defSkill.name}」로 완전히 피했다!`);
+    } else {
+      finalDmg = Math.max(1, Math.round(dmg * 0.35));
+      applyDamageWithMiracle(ctx, attackerSide === "player" ? "enemy" : "player", finalDmg);
+      const grazeText = outcome === "graze" ? "스치듯 맞아 " : "";
+      ctx.log.push(`${icon} ${atk.name}의 「${atkSkill.name}」!${crit ? " 💥 급소를 노렸지만" : ""} ${def.name}가 「${defSkill.name}」로 ${grazeText}대부분 막아내고 ${finalDmg}의 피해만 입었다.`);
+    }
   }
 
   if (atkSkill.selfDamage){
@@ -822,10 +998,11 @@ function resolveAttackVsDefense(ctx, attackerSide){
     else ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + atkSkill.heal);
     ctx.log.push(`   … ${atk.name}가 체력을 ${atkSkill.heal} 회복했다.`);
   }
-  if (defSkill.heal){
-    if (attackerSide === "player") ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + defSkill.heal);
-    else ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + defSkill.heal);
-    ctx.log.push(`   … ${def.name}가 방어하며 체력을 ${defSkill.heal} 회복했다.`);
+  const defHeal = effectiveDefenseHeal(def, defSkill);
+  if (defHeal){
+    if (attackerSide === "player") ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + defHeal);
+    else ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + defHeal);
+    ctx.log.push(`   … ${def.name}가 방어하며 체력을 ${defHeal} 회복했다.`);
   }
 }
 
@@ -844,23 +1021,37 @@ function resolveRound(){
   };
 
   if (ctx.pSkill.type === "attack" && ctx.eSkill.type === "attack"){
-    let dmgP = calcDamage(b.player, b.enemy, ctx.pSkill, pMods.atkMult, eMods.defMult);
-    const critP = rollCrit(b.player, b.env);
-    if (critP) dmgP = Math.round(dmgP * 1.5);
-    let dmgE = calcDamage(b.enemy, b.player, ctx.eSkill, eMods.atkMult, pMods.defMult);
-    const critE = rollCrit(b.enemy, b.env);
-    if (critE) dmgE = Math.round(dmgE * 1.5);
-    ctx.eHP = Math.max(0, ctx.eHP - dmgP);
-    ctx.pHP = Math.max(0, ctx.pHP - dmgE);
-    ctx.log.push(`🦋 ${b.player.name}의 「${ctx.pSkill.name}」!${critP ? " 💥 급소 공격!" : ""} ${b.enemy.name}에게 ${dmgP}의 피해!`);
-    ctx.log.push(`🐜 ${b.enemy.name}의 「${ctx.eSkill.name}」!${critE ? " 💥 급소 공격!" : ""} ${b.player.name}에게 ${dmgE}의 피해!`);
-    [["player",ctx.pSkill],["enemy",ctx.eSkill]].forEach(([side,skill]) => {
+    const outcomeP = computeAttackRoll(b.player, b.enemy, b.env, ctx.pSkill);
+    const outcomeE = computeAttackRoll(b.enemy, b.player, b.env, ctx.eSkill);
+    let dmgP = 0, dmgE = 0;
+
+    if (outcomeP === "miss"){
+      ctx.log.push(`🦋 ${b.player.name}의 「${ctx.pSkill.name}」! 완전히 빗나갔다!`);
+    } else {
+      dmgP = calcDamage(b.player, b.enemy, ctx.pSkill, pMods.atkMult, eMods.defMult);
+      const critP = rollCrit(b.player, b.enemy, b.env);
+      if (critP) dmgP = Math.round(dmgP * 1.5);
+      if (outcomeP === "graze") dmgP = Math.round(dmgP * 0.5);
+      ctx.log.push(`🦋 ${b.player.name}의 「${ctx.pSkill.name}」!${critP ? " 💥 급소 공격!" : ""}${outcomeP === "graze" ? " (스치듯 맞음)" : ""} ${b.enemy.name}에게 ${dmgP}의 피해!`);
+    }
+    if (outcomeE === "miss"){
+      ctx.log.push(`🐜 ${b.enemy.name}의 「${ctx.eSkill.name}」! 완전히 빗나갔다!`);
+    } else {
+      dmgE = calcDamage(b.enemy, b.player, ctx.eSkill, eMods.atkMult, pMods.defMult);
+      const critE = rollCrit(b.enemy, b.player, b.env);
+      if (critE) dmgE = Math.round(dmgE * 1.5);
+      if (outcomeE === "graze") dmgE = Math.round(dmgE * 0.5);
+      ctx.log.push(`🐜 ${b.enemy.name}의 「${ctx.eSkill.name}」!${critE ? " 💥 급소 공격!" : ""}${outcomeE === "graze" ? " (스치듯 맞음)" : ""} ${b.player.name}에게 ${dmgE}의 피해!`);
+    }
+    applyDamageWithMiracle(ctx, "enemy", dmgP);
+    applyDamageWithMiracle(ctx, "player", dmgE);
+    [["player",ctx.pSkill,dmgP],["enemy",ctx.eSkill,dmgE]].forEach(([side,skill,dmg]) => {
       const actor = side==="player" ? b.player : b.enemy;
       if (skill.selfDamage){
         if (side==="player") ctx.pHP = Math.max(0, ctx.pHP - skill.selfDamage); else ctx.eHP = Math.max(0, ctx.eHP - skill.selfDamage);
         ctx.log.push(`   … ${actor.name}도 ${skill.selfDamage}만큼 힘이 빠졌다.`);
       }
-      if (skill.heal){
+      if (skill.heal && dmg > 0){
         if (side==="player") ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + skill.heal); else ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + skill.heal);
         ctx.log.push(`   … ${actor.name}가 체력을 ${skill.heal} 회복했다.`);
       }
@@ -870,12 +1061,18 @@ function resolveRound(){
   } else if (ctx.pSkill.type === "defense" && ctx.eSkill.type === "attack"){
     resolveAttackVsDefense(ctx, "enemy");
   } else {
-    const healP = ctx.pSkill.heal || Math.round(b.player.stats.hp * 0.08);
-    const healE = ctx.eSkill.heal || Math.round(b.enemy.stats.hp * 0.08);
+    const healP = effectiveDefenseHeal(b.player, ctx.pSkill) || Math.round(b.player.stats.hp * 0.08);
+    const healE = effectiveDefenseHeal(b.enemy, ctx.eSkill) || Math.round(b.enemy.stats.hp * 0.08);
     ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + healP);
     ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + healE);
     ctx.log.push(`🛡️ 둘 다 방어만 하며 견제하다 끝났다. ${b.player.name}은 체력 ${healP}, ${b.enemy.name}는 체력 ${healE}을 회복했다.`);
   }
+
+  /* 연속 공격 스트릭 갱신 + 피로 페널티 (공격을 거듭 낼수록 조금씩 지침, 죽지는 않음) */
+  b.playerAtkStreak = ctx.pSkill.type === "attack" ? (b.playerAtkStreak || 0) + 1 : 0;
+  b.enemyAtkStreak = ctx.eSkill.type === "attack" ? (b.enemyAtkStreak || 0) + 1 : 0;
+  if (ctx.pSkill.type === "attack") applyFatigue(ctx, "player", b.playerAtkStreak);
+  if (ctx.eSkill.type === "attack") applyFatigue(ctx, "enemy", b.enemyAtkStreak);
 
   b.playerHP = ctx.pHP;
   b.enemyHP = ctx.eHP;
