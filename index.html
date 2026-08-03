@@ -112,9 +112,9 @@
 
   /* ---------- battle ---------- */
   .step-label{ font-family:'Jua',sans-serif; font-size:1rem; color:var(--leaf-dark); margin:16px 0 10px; }
-  .env-card{ background:var(--card); border:3px dashed var(--line); border-radius:22px; padding:16px; text-align:center; }
-  .env-card .ename{ font-family:'Jua',sans-serif; font-size:1.1rem; color:var(--leaf-dark); }
-  .env-card .emeta{ display:flex; justify-content:center; gap:14px; font-size:.85rem; color:var(--ink-soft); margin-top:6px; }
+  .env-card{ background:var(--card); border:2px dashed var(--line); border-radius:14px; padding:6px 12px; text-align:center; }
+  .env-card .ename{ font-family:'Jua',sans-serif; font-size:.82rem; color:var(--leaf-dark); margin:0; }
+  .env-card .emeta{ display:flex; justify-content:center; gap:10px; font-size:.7rem; color:var(--ink-soft); margin-top:1px; }
   .vs-row{ display:flex; justify-content:center; gap:28px; margin-bottom:16px; }
   .vs-item{ display:flex; flex-direction:column; align-items:center; gap:6px; }
   .vs-avatar{ width:74px; height:74px; border-radius:50%; background:var(--card); border:3px dashed var(--line); display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -122,17 +122,20 @@
   .vs-item .vname{ font-family:'Jua',sans-serif; font-size:.85rem; }
   .action-row{ display:flex; gap:10px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
 
-  .hp-panel{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
-  .hp-card{ background:var(--card); border-radius:20px; padding:12px; border:3px solid var(--line); }
-  .hp-card .who{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  .mini-avatar{ width:26px; height:26px; border-radius:50%; overflow:hidden; flex-shrink:0; background:var(--cream); display:flex; align-items:center; justify-content:center; }
-  .hp-card .who .name{ font-family:'Jua',sans-serif; font-size:.9rem; }
-  .hp-track{ height:14px; border-radius:999px; background:var(--line); overflow:hidden; }
+  .hp-panel{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px; }
+  .hp-card{ background:var(--card); border-radius:12px; padding:6px 8px; border:2px solid var(--line); }
+  .hp-card .who{ display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+  .mini-avatar{ width:18px; height:18px; border-radius:50%; overflow:hidden; flex-shrink:0; background:var(--cream); display:flex; align-items:center; justify-content:center; }
+  .hp-card .who .name{ font-family:'Jua',sans-serif; font-size:.78rem; }
+  .hp-track{ height:9px; border-radius:999px; background:var(--line); overflow:hidden; }
   .hp-fill{ height:100%; border-radius:999px; transition:width .35s; }
-  .hp-num{ font-size:.7rem; color:var(--ink-soft); margin-top:3px; }
+  .hp-num{ font-size:.62rem; color:var(--ink-soft); margin:2px 0 0; }
 
-  .battle-log{ background:#fff; border:3px solid var(--line); border-radius:18px; padding:12px 14px; height:170px; overflow-y:auto; font-size:1rem; line-height:1.5; margin-bottom:12px; }
+  .battle-log{ background:#fff; border:3px solid var(--line); border-radius:16px; padding:10px 12px; height:min(52vh, 480px); overflow-y:auto; font-size:1.05rem; line-height:1.55; margin-bottom:8px; scroll-behavior:smooth; }
   .battle-log p{ margin:3px 0; }
+  .battle-wrap{ max-width:920px; margin:0 auto; padding:8px 12px calc(70px + env(safe-area-inset-bottom)); min-height:100vh; display:flex; flex-direction:column; }
+  .battle-top-bar{ display:flex; align-items:center; justify-content:space-between; padding:4px 2px 8px; }
+  .battle-top-bar .mini-title{ font-family:'Jua',sans-serif; font-size:.85rem; color:var(--leaf-dark); }
 
   .skill-btn{ width:100%; text-align:left; background:var(--card); border:3px solid var(--line); border-radius:18px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; margin-bottom:9px; transition:transform .08s; font-family:'Gowun Dodum',sans-serif; }
   .skill-btn:active{ transform:scale(.98); }
@@ -159,6 +162,97 @@
 <div id="app"></div>
 
 <script>
+/* ============================== 사운드 엔진 (파일 없이 직접 합성) ============================== */
+const SoundEngine = (() => {
+  let ctx = null;
+  function ensureCtx(){
+    if (!ctx){
+      try{ ctx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ ctx = null; }
+    }
+    if (ctx && ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+  function tone(freq, start, dur, type="sine", peakVol=0.18, glideTo=null){
+    const c = ensureCtx();
+    if (!c) return;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, c.currentTime + start);
+    if (glideTo) osc.frequency.linearRampToValueAtTime(glideTo, c.currentTime + start + dur);
+    gain.gain.setValueAtTime(0, c.currentTime + start);
+    gain.gain.linearRampToValueAtTime(peakVol, c.currentTime + start + Math.min(0.02, dur/3));
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+    osc.connect(gain); gain.connect(c.destination);
+    osc.start(c.currentTime + start);
+    osc.stop(c.currentTime + start + dur + 0.02);
+  }
+  const presets = {
+    click:   () => tone(520, 0, 0.05, "square", 0.10),
+    tick:    () => tone(700, 0, 0.07, "sine", 0.12),
+    hit:     () => { tone(160, 0, 0.13, "sawtooth", 0.22, 90); },
+    crit:    () => { tone(220, 0, 0.09, "square", 0.22, 500); tone(700, 0.08, 0.14, "square", 0.18, 950); },
+    miss:    () => { tone(500, 0, 0.10, "sine", 0.12, 250); },
+    dodge:   () => { tone(600, 0, 0.08, "sine", 0.13, 900); },
+    heal:    () => { tone(520, 0, 0.10, "sine", 0.15, 700); tone(760, 0.09, 0.14, "sine", 0.14, 980); },
+    fatigue: () => tone(220, 0, 0.16, "sine", 0.12, 140),
+    miracle: () => { [520,700,880,1180].forEach((f,i)=> tone(f, i*0.07, 0.11, "triangle", 0.16)); },
+    win:     () => { [523,659,784,1046].forEach((f,i)=> tone(f, i*0.11, 0.18, "triangle", 0.20)); },
+    draw:    () => { tone(440, 0, 0.14, "sine", 0.15); tone(440, 0.18, 0.14, "sine", 0.15); },
+    reveal:  () => tone(880, 0, 0.06, "sine", 0.10),
+    start:   () => { tone(300, 0, 0.12, "sawtooth", 0.16, 700); tone(700, 0.1, 0.16, "triangle", 0.16, 1000); },
+    neutral: () => tone(600, 0, 0.05, "sine", 0.08),
+  };
+  function play(name){
+    try{ (presets[name] || presets.neutral)(); }catch(e){ /* 오디오 미지원 브라우저는 조용히 무시 */ }
+  }
+  return { play, ensureCtx };
+})();
+
+/* 긴장감 있는 배경 루프 (파일 없이 두 음을 번갈아 재생) */
+const BgMusic = (() => {
+  let timer = null;
+  let step = 0;
+  function playPulse(){
+    const c = SoundEngine.ensureCtx();
+    if (!c) return;
+    const notes = [110, 116.5]; // 살짝 불협 관계 = 긴장감
+    const freq = notes[step % 2];
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, c.currentTime);
+    gain.gain.setValueAtTime(0, c.currentTime);
+    gain.gain.linearRampToValueAtTime(0.05, c.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.5);
+    osc.connect(gain); gain.connect(c.destination);
+    osc.start(); osc.stop(c.currentTime + 0.55);
+    step++;
+  }
+  function start(){
+    if (timer) return;
+    SoundEngine.ensureCtx();
+    playPulse();
+    timer = setInterval(playPulse, 620);
+  }
+  function stop(){
+    if (timer){ clearInterval(timer); timer = null; }
+  }
+  return { start, stop };
+})();
+
+/* 음성 안내 (브라우저 내장 TTS, 기기마다 품질/지원이 다를 수 있음) */
+function announce(text){
+  try{
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ko-KR";
+    u.rate = 1.05;
+    window.speechSynthesis.speak(u);
+  }catch(e){ /* 미지원 브라우저는 무시 */ }
+}
+
 /* ============================== 데이터/상수 ============================== */
 const ORDER_INFO = {
   coleoptera:      { name:"딱정벌레목",     color:"#C17A3D" },
@@ -287,6 +381,9 @@ function calcDamage(attacker, defender, skill, atkMult, defMult){
   raw = Math.min(raw, cap);
   return Math.round(raw);
 }
+/* 로그 한 줄 + 그 줄에 어울리는 효과음을 함께 담는 헬퍼 */
+function L(text, sound){ return { text, sound: sound || "neutral" }; }
+
 /* 종합 전투력 (언더독 보정 판단용) */
 function powerScore(insect){
   return insect.stats.hp*0.5 + insect.stats.atk + insect.stats.def*0.5 + insect.stats.spd*0.3;
@@ -381,7 +478,7 @@ function applyDamageWithMiracle(ctx, side, dmg){
   if (newHP <= 0 && curHP > 0 && !b[usedKey] && powerScore(self) < powerScore(opp) * 0.7){
     b[usedKey] = true;
     newHP = 1;
-    ctx.log.push(`✨ ${self.name}가 기적적으로 버텨내며 쓰러지지 않았다! (체력 1로 생존)`);
+    ctx.log.push(L(`✨ ${self.name}가 기적적으로 버텨내며 쓰러지지 않았다! (체력 1로 생존)`, "miracle"));
   }
   if (side === "player") ctx.pHP = newHP; else ctx.eHP = newHP;
 }
@@ -401,7 +498,7 @@ function applyFatigue(ctx, side, streak){
   const dmg = Math.max(2, Math.round(self.stats.hp * frac));
   if (side === "player") ctx.pHP = Math.max(1, ctx.pHP - dmg);
   else ctx.eHP = Math.max(1, ctx.eHP - dmg);
-  ctx.log.push(`   … ${self.name}가 연속 공격(${streak}회째)으로 지쳐 체력을 ${dmg} 잃었다.`);
+  ctx.log.push(L(`   … ${self.name}가 연속 공격(${streak}회째)으로 지쳐 체력을 ${dmg} 잃었다.`, "fatigue"));
 }
 
 
@@ -459,14 +556,17 @@ function renderRulesModal(){
         <div class="section-box"><p class="head" style="color:var(--coral-dark)">🎯 명중 판정</p>
           <p>모든 공격은 <b>빗나감 / 스치듯 맞음(피해 절반) / 제대로 맞음</b> 셋 중 하나로 정해져요. 날씨·서식지·시간대에 따라 확률이 달라져요.</p>
         </div>
-        <div class="section-box"><p class="head">🏷️ 기술 특성 (정밀 · 회피 · 회복)</p>
-          <p>같은 종류(공격/방어) 기술이 2개 이상이면 위력이 낮은 쪽에 특별한 장점이 붙어요. 공격기 중 위력이 낮은 쪽은 <b>정밀</b>(잘 안 빗나감), 방어기 중 위력이 높은 쪽은 <b>회피</b>(완전히 피할 확률 대폭 상승), 위력이 낮은 쪽은 <b>회복</b>(맞아도 체력을 회복)이에요. 버튼 이름 옆 작은 글자로 표시돼요.</p>
+        <div class="section-box"><p class="head">🏷️ 기술 특성</p>
+          <p>기술 이름 옆에 특별한 단어가 붙어 있으면 그 기술엔 위력 숫자 말고도 특별한 장점이 있다는 뜻이에요.</p>
+          <p>⚔️ <b>정밀</b>이 붙은 공격기 — 빗나가거나 스치듯 맞을 확률이 크게 줄어서 훨씬 안정적으로 명중해요.</p>
+          <p>🛡️ <b>회피</b>가 붙은 방어기 — 상대 공격을 완전히 피할 확률이 크게 올라가요.</p>
+          <p>💚 <b>회복</b>이 붙은 방어기 — 맞아도, 안 맞아도 체력을 자동으로 회복해요.</p>
         </div>
         <div class="section-box"><p class="head">💥 크리티컬 &amp; 🛡️ 회피</p>
           <p>제대로 맞았을 땐 15%(+시간대 보너스) 확률로 크리티컬(피해 1.5배)! 방어 기술을 쓰면 30%(+시간대·속도 보너스) 확률로 완전히 피하고, 못 피해도 피해를 65% 줄여요.</p>
         </div>
-        <div class="section-box"><p class="head" style="color:var(--sun-dark)">🐜 언더독 보정</p>
-          <p>종합 능력치가 상대보다 많이 낮은 쪽은 크리티컬 확률이 크게 올라요. 반대로 훨씬 강한 쪽은 방심해서 빗나갈 확률이 올라요. 또한 한 번의 공격으로는 상대 체력의 33%까지만 깎을 수 있어서, 아무리 강해도 한 방에 끝내기는 어려워요.</p>
+        <div class="section-box"><p class="head" style="color:var(--sun-dark)">🐜 언더독의 투지</p>
+          <p>종합 능력치가 상대보다 많이 낮은 쪽은 이를 악물고 싸워서 크리티컬 확률이 크게 올라요. 반대로 훨씬 강한 쪽은 방심해서 빗나갈 확률이 올라요. 또한 한 번의 공격으로는 상대 체력의 33%까지만 깎을 수 있어서, 아무리 강해도 한 방에 끝내기는 어려워요.</p>
         </div>
         <div class="section-box"><p class="head" style="color:var(--sky-dark)">✨ 기적의 생존</p>
           <p>상대보다 훨씬 약한 곤충은 대결당 딱 한 번, 쓰러질 위기의 순간에 체력 1로 버텨내요.</p>
@@ -644,7 +744,7 @@ function renderBattle(){
 
   if (b.phase === "mode-select"){
     return `
-      <div class="wrap" style="text-align:center">
+      <div class="wrap battle-wrap" style="text-align:center">
         <p class="step-label">누구와 대결할까요?</p>
         <div class="action-row" style="flex-direction:column;align-items:center;gap:10px">
           <button class="btn btn-sky" data-set-mode="pvc" style="width:100%;max-width:320px">🤖 컴퓨터와 대결 (1인용)</button>
@@ -662,7 +762,7 @@ function renderBattle(){
     else label = b.mode==="pvp" ? "2️⃣ 플레이어 2, 곤충을 선택하세요" : "2️⃣ 상대(컴퓨터) 곤충을 선택하세요";
     const favCount = getFavorites().length;
     return `
-      <div class="wrap">
+      <div class="wrap battle-wrap">
         <p class="step-label">${label}</p>
         ${b.phase==="pick-enemy" ? `
           <div class="action-row" style="margin-bottom:12px">
@@ -682,7 +782,7 @@ function renderBattle(){
 
   if (b.phase === "draw-env"){
     return `
-      <div class="wrap" style="text-align:center">
+      <div class="wrap battle-wrap" style="text-align:center">
         <p class="step-label">3️⃣ 환경 카드를 뽑아보세요</p>
         <div class="vs-row">
           <div class="vs-item"><div class="vs-avatar">${avatarHTML(b.player,44)}</div><p class="vname">${esc(b.player.name)}</p></div>
@@ -708,7 +808,10 @@ function renderBattle(){
             <button class="btn btn-coral" data-continue-handoff="1">확인했어요, 계속하기 →</button>
           </div>`;
       } else if (b.turnStage === "resolving"){
-        bodyHtml = `
+        bodyHtml = b.busy ? `
+          <div style="text-align:center;padding:20px 0">
+            <p style="font-family:'Jua',sans-serif;color:var(--leaf-dark);margin:0">⚔️ 공개하는 중...</p>
+          </div>` : `
           <div style="text-align:center;padding:20px 0">
             <p style="font-family:'Jua',sans-serif;color:var(--leaf-dark);margin:0 0 14px">🔓 두 곤충 모두 기술을 골랐어요!</p>
             <button class="btn btn-coral" data-resolve-round="1">⚔️ 결과 공개하기!</button>
@@ -749,21 +852,21 @@ function renderBattle(){
         </div>`;
     }
     return `
-      <div class="wrap">
-        <div style="margin-bottom:12px">${envCardHTML(b.env)}</div>
+      <div class="wrap battle-wrap">
+        <div style="margin-bottom:6px">${envCardHTML(b.env)}</div>
         <div class="hp-panel">
           <div class="hp-card">
-            <div class="who"><div class="mini-avatar">${avatarHTML(b.player,26)}</div><span class="name">${esc(b.player.name)}</span></div>
+            <div class="who"><div class="mini-avatar">${avatarHTML(b.player,18)}</div><span class="name">${esc(b.player.name)}</span></div>
             <div class="hp-track"><div class="hp-fill" style="width:${(b.playerHP/b.player.stats.hp)*100}%;background:var(--leaf)"></div></div>
             <p class="hp-num">${b.playerHP} / ${b.player.stats.hp}</p>
           </div>
           <div class="hp-card">
-            <div class="who"><div class="mini-avatar">${avatarHTML(b.enemy,26)}</div><span class="name">${esc(b.enemy.name)}</span></div>
+            <div class="who"><div class="mini-avatar">${avatarHTML(b.enemy,18)}</div><span class="name">${esc(b.enemy.name)}</span></div>
             <div class="hp-track"><div class="hp-fill" style="width:${(b.enemyHP/b.enemy.stats.hp)*100}%;background:var(--coral)"></div></div>
             <p class="hp-num">${b.enemyHP} / ${b.enemy.stats.hp}</p>
           </div>
         </div>
-        <div class="battle-log" id="battleLog">${b.log.map(l=>`<p>${esc(l)}</p>`).join("")}</div>
+        <div class="battle-log" id="battleLog">${b.log.map(l=>`<p>${esc(l.text)}</p>`).join("")}</div>
         ${bodyHtml}
       </div>`;
   }
@@ -789,9 +892,11 @@ function render(){
   } else {
     body = renderBattle();
   }
-  app.innerHTML = favToast() + renderHeader() + body
+  app.innerHTML = favToast()
+    + (state.tab==="battle" ? `<div class="battle-top-bar wrap"><span class="mini-title">⚔️ 곤충 배틀 도감</span></div>` : renderHeader())
+    + body
     + (state.tab==="battle" ? `<button class="exit-fab" data-exit-battle="1">✕ 나가기</button><button class="rules-fab" data-toggle-rules="1">📖 규칙</button>${renderRulesModal()}` : "")
-    + `<footer>${INSECTS.length}종의 곤충 표본 · 대결은 재미를 위한 상상 시뮬레이션이에요<br><a href="admin.html" style="color:#c2b190;text-decoration:underline">⚙️ 관리자</a></footer>`;
+    + (state.tab==="battle" ? "" : `<footer>${INSECTS.length}종의 곤충 표본 · 대결은 재미를 위한 상상 시뮬레이션이에요<br><a href="admin.html" style="color:#c2b190;text-decoration:underline">⚙️ 관리자</a></footer>`);
 
   if ((state.tab==="dex" || state.tab==="favorites") && dataSource==="ready"){
     document.getElementById("detailSlot").innerHTML = renderDetailModal(INSECTS.find(i=>i.id===state.dex.detailId));
@@ -815,9 +920,13 @@ function render(){
 /* ============================== 이벤트 처리 ============================== */
 document.addEventListener("click", (e)=>{
   const t = (attr)=> e.target.closest(`[${attr}]`);
+  if (e.target.closest("button")) SoundEngine.play("click");
 
   let el;
-  if (el = t("data-set-tab")){ state.tab = el.getAttribute("data-set-tab"); render(); return; }
+  if (el = t("data-set-tab")){
+    if (state.tab === "battle" && el.getAttribute("data-set-tab") !== "battle"){ BgMusic.stop(); try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){} }
+    state.tab = el.getAttribute("data-set-tab"); render(); return;
+  }
   if (el = t("data-dex-order")){ state.dex.orderFilter = el.getAttribute("data-dex-order"); render(); return; }
   if (el = t("data-open-detail")){ state.dex.detailId = el.getAttribute("data-open-detail"); render(); return; }
   if (el = t("data-toggle-fav")){ toggleFavorite(el.getAttribute("data-toggle-fav")); return; }
@@ -855,20 +964,29 @@ document.addEventListener("click", (e)=>{
   }
   if (el = t("data-continue-handoff")){
     state.battle.turnStage = "p2-choose";
-    render(); return;
+    render();
+    maybeAnnounceTurn();
+    return;
   }
   if (el = t("data-toggle-rules")){ state.battle.showRules = true; render(); return; }
   if (el = t("data-resolve-round")){ resolveRound(); return; }
   if (el = t("data-exit-battle")){
+    BgMusic.stop();
+    try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
     state.battle = { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, round:1, turnStage:"p1-choose", playerChoice:null, enemyChoice:null, log:[], winner:null, busy:false, pickOrderFilter:"all", pickFavOnly:false, playerMiracleUsed:false, enemyMiracleUsed:false, playerAtkStreak:0, enemyAtkStreak:0, showRules:false };
     state.tab = "dex";
     render(); return;
   }
   if (el = t("data-reset-battle")){
+    BgMusic.stop();
+    try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
     state.battle = { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, round:1, turnStage:"p1-choose", playerChoice:null, enemyChoice:null, log:[], winner:null, busy:false, pickOrderFilter:"all", pickFavOnly:false, playerMiracleUsed:false, enemyMiracleUsed:false, playerAtkStreak:0, enemyAtkStreak:0, showRules:false };
     render(); return;
   }
-  if (el = t("data-rematch")){ state.battle.phase="draw-env"; state.battle.env=null; render(); return; }
+  if (el = t("data-rematch")){
+    BgMusic.stop();
+    state.battle.phase="draw-env"; state.battle.env=null; render(); return;
+  }
   if (el = t("data-load-fallback")){ INSECTS = FALLBACK_SAMPLE; dataSource="ready"; render(); return; }
 });
 
@@ -895,9 +1013,9 @@ function startBattle(){
   b.enemyHP = b.enemy.stats.hp;
   const pMods = envModifiers(b.player, b.env);
   const eMods = envModifiers(b.enemy, b.env);
-  const intro = [`🎬 대결 시작! ${b.player.name} VS ${b.enemy.name}`, `매 턴 공격 또는 방어 기술을 하나씩 골라요. 상대가 뭘 낼지는 모르니 잘 예측해보세요!`];
-  pMods.notes.forEach(n=> intro.push(`${b.player.name}: ${n}`));
-  eMods.notes.forEach(n=> intro.push(`${b.enemy.name}: ${n}`));
+  const intro = [L(`🎬 대결 시작! ${b.player.name} VS ${b.enemy.name}`, "start"), L(`매 턴 공격 또는 방어 기술을 하나씩 골라요. 상대가 뭘 낼지는 모르니 잘 예측해보세요!`)];
+  pMods.notes.forEach(n=> intro.push(L(`${b.player.name}: ${n}`)));
+  eMods.notes.forEach(n=> intro.push(L(`${b.enemy.name}: ${n}`)));
   b.log = intro;
   b.winner = null;
   b.busy = false;
@@ -910,7 +1028,10 @@ function startBattle(){
   b.playerAtkStreak = 0;
   b.enemyAtkStreak = 0;
   b.phase = "battling";
+  SoundEngine.play("start");
+  BgMusic.start();
   render();
+  maybeAnnounceTurn();
 }
 
 /* 적(컴퓨터) 기술 선택: 체력이 낮으면 절반 확률로 방어 기술을 우선 고려 */
@@ -970,7 +1091,7 @@ function resolveAttackVsDefense(ctx, attackerSide){
   let finalDmg = 0;
 
   if (outcome === "miss"){
-    ctx.log.push(`${icon} ${atk.name}의 「${atkSkill.name}」! 완전히 빗나갔다! (${def.name}는 「${defSkill.name}」로 여유롭게 버텼다)`);
+    ctx.log.push(L(`${icon} ${atk.name}의 「${atkSkill.name}」! 완전히 빗나갔다! (${def.name}는 「${defSkill.name}」로 여유롭게 버텼다)`, "miss"));
   } else {
     let dmg = calcDamage(atk, def, atkSkill, atkMods.atkMult, defMods.defMult);
     const crit = rollCrit(atk, def, b.env);
@@ -979,36 +1100,38 @@ function resolveAttackVsDefense(ctx, attackerSide){
     const dodged = rollDodge(def, b.env, defSpdEff, atkSpdEff, defSkill);
 
     if (dodged){
-      ctx.log.push(`🛡️ ${atk.name}의 「${atkSkill.name}」! ${def.name}가 「${defSkill.name}」로 완전히 피했다!`);
+      ctx.log.push(L(`🛡️ ${atk.name}의 「${atkSkill.name}」! ${def.name}가 「${defSkill.name}」로 완전히 피했다!`, "dodge"));
     } else {
       finalDmg = Math.max(1, Math.round(dmg * 0.35));
       applyDamageWithMiracle(ctx, attackerSide === "player" ? "enemy" : "player", finalDmg);
       const grazeText = outcome === "graze" ? "스치듯 맞아 " : "";
-      ctx.log.push(`${icon} ${atk.name}의 「${atkSkill.name}」!${crit ? " 💥 급소를 노렸지만" : ""} ${def.name}가 「${defSkill.name}」로 ${grazeText}대부분 막아내고 ${finalDmg}의 피해만 입었다.`);
+      ctx.log.push(L(`${icon} ${atk.name}의 「${atkSkill.name}」!${crit ? " 💥 급소를 노렸지만" : ""} ${def.name}가 「${defSkill.name}」로 ${grazeText}대부분 막아내고 ${finalDmg}의 피해만 입었다.`, crit ? "crit" : "hit"));
     }
   }
 
   if (atkSkill.selfDamage){
     if (attackerSide === "player") ctx.pHP = Math.max(0, ctx.pHP - atkSkill.selfDamage);
     else ctx.eHP = Math.max(0, ctx.eHP - atkSkill.selfDamage);
-    ctx.log.push(`   … ${atk.name}도 ${atkSkill.selfDamage}만큼 힘이 빠졌다.`);
+    ctx.log.push(L(`   … ${atk.name}도 ${atkSkill.selfDamage}만큼 힘이 빠졌다.`, "fatigue"));
   }
   if (atkSkill.heal && finalDmg > 0){
     if (attackerSide === "player") ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + atkSkill.heal);
     else ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + atkSkill.heal);
-    ctx.log.push(`   … ${atk.name}가 체력을 ${atkSkill.heal} 회복했다.`);
+    ctx.log.push(L(`   … ${atk.name}가 체력을 ${atkSkill.heal} 회복했다.`, "heal"));
   }
   const defHeal = effectiveDefenseHeal(def, defSkill);
   if (defHeal){
     if (attackerSide === "player") ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + defHeal);
     else ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + defHeal);
-    ctx.log.push(`   … ${def.name}가 방어하며 체력을 ${defHeal} 회복했다.`);
+    ctx.log.push(L(`   … ${def.name}가 방어하며 체력을 ${defHeal} 회복했다.`, "heal"));
   }
 }
 
 /* 이번 라운드에 서로 고른 기술을 공개하고 결과를 계산 */
 function resolveRound(){
   const b = state.battle;
+  if (b.busy) return; // 중복 클릭 방지
+  b.busy = true;
   const pMods = envModifiers(b.player, b.env);
   const eMods = envModifiers(b.enemy, b.env);
   const ctx = {
@@ -1017,7 +1140,7 @@ function resolveRound(){
     pSpd: b.player.stats.spd * pMods.spdMult,
     eSpd: b.enemy.stats.spd * eMods.spdMult,
     pHP: b.playerHP, eHP: b.enemyHP,
-    log: [`🔓 공개! ${b.player.name}: 「${b.playerChoice.name}」 vs ${b.enemy.name}: 「${b.enemyChoice.name}」`],
+    log: [L(`🔓 공개! ${b.player.name}: 「${b.playerChoice.name}」 vs ${b.enemy.name}: 「${b.enemyChoice.name}」`, "reveal")],
   };
 
   if (ctx.pSkill.type === "attack" && ctx.eSkill.type === "attack"){
@@ -1026,22 +1149,22 @@ function resolveRound(){
     let dmgP = 0, dmgE = 0;
 
     if (outcomeP === "miss"){
-      ctx.log.push(`🦋 ${b.player.name}의 「${ctx.pSkill.name}」! 완전히 빗나갔다!`);
+      ctx.log.push(L(`🦋 ${b.player.name}의 「${ctx.pSkill.name}」! 완전히 빗나갔다!`, "miss"));
     } else {
       dmgP = calcDamage(b.player, b.enemy, ctx.pSkill, pMods.atkMult, eMods.defMult);
       const critP = rollCrit(b.player, b.enemy, b.env);
       if (critP) dmgP = Math.round(dmgP * 1.5);
       if (outcomeP === "graze") dmgP = Math.round(dmgP * 0.5);
-      ctx.log.push(`🦋 ${b.player.name}의 「${ctx.pSkill.name}」!${critP ? " 💥 급소 공격!" : ""}${outcomeP === "graze" ? " (스치듯 맞음)" : ""} ${b.enemy.name}에게 ${dmgP}의 피해!`);
+      ctx.log.push(L(`🦋 ${b.player.name}의 「${ctx.pSkill.name}」!${critP ? " 💥 급소 공격!" : ""}${outcomeP === "graze" ? " (스치듯 맞음)" : ""} ${b.enemy.name}에게 ${dmgP}의 피해!`, critP ? "crit" : "hit"));
     }
     if (outcomeE === "miss"){
-      ctx.log.push(`🐜 ${b.enemy.name}의 「${ctx.eSkill.name}」! 완전히 빗나갔다!`);
+      ctx.log.push(L(`🐜 ${b.enemy.name}의 「${ctx.eSkill.name}」! 완전히 빗나갔다!`, "miss"));
     } else {
       dmgE = calcDamage(b.enemy, b.player, ctx.eSkill, eMods.atkMult, pMods.defMult);
       const critE = rollCrit(b.enemy, b.player, b.env);
       if (critE) dmgE = Math.round(dmgE * 1.5);
       if (outcomeE === "graze") dmgE = Math.round(dmgE * 0.5);
-      ctx.log.push(`🐜 ${b.enemy.name}의 「${ctx.eSkill.name}」!${critE ? " 💥 급소 공격!" : ""}${outcomeE === "graze" ? " (스치듯 맞음)" : ""} ${b.player.name}에게 ${dmgE}의 피해!`);
+      ctx.log.push(L(`🐜 ${b.enemy.name}의 「${ctx.eSkill.name}」!${critE ? " 💥 급소 공격!" : ""}${outcomeE === "graze" ? " (스치듯 맞음)" : ""} ${b.player.name}에게 ${dmgE}의 피해!`, critE ? "crit" : "hit"));
     }
     applyDamageWithMiracle(ctx, "enemy", dmgP);
     applyDamageWithMiracle(ctx, "player", dmgE);
@@ -1049,11 +1172,11 @@ function resolveRound(){
       const actor = side==="player" ? b.player : b.enemy;
       if (skill.selfDamage){
         if (side==="player") ctx.pHP = Math.max(0, ctx.pHP - skill.selfDamage); else ctx.eHP = Math.max(0, ctx.eHP - skill.selfDamage);
-        ctx.log.push(`   … ${actor.name}도 ${skill.selfDamage}만큼 힘이 빠졌다.`);
+        ctx.log.push(L(`   … ${actor.name}도 ${skill.selfDamage}만큼 힘이 빠졌다.`, "fatigue"));
       }
       if (skill.heal && dmg > 0){
         if (side==="player") ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + skill.heal); else ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + skill.heal);
-        ctx.log.push(`   … ${actor.name}가 체력을 ${skill.heal} 회복했다.`);
+        ctx.log.push(L(`   … ${actor.name}가 체력을 ${skill.heal} 회복했다.`, "heal"));
       }
     });
   } else if (ctx.pSkill.type === "attack" && ctx.eSkill.type === "defense"){
@@ -1065,7 +1188,7 @@ function resolveRound(){
     const healE = effectiveDefenseHeal(b.enemy, ctx.eSkill) || Math.round(b.enemy.stats.hp * 0.08);
     ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + healP);
     ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + healE);
-    ctx.log.push(`🛡️ 둘 다 방어만 하며 견제하다 끝났다. ${b.player.name}은 체력 ${healP}, ${b.enemy.name}는 체력 ${healE}을 회복했다.`);
+    ctx.log.push(L(`🛡️ 둘 다 방어만 하며 견제하다 끝났다. ${b.player.name}은 체력 ${healP}, ${b.enemy.name}는 체력 ${healE}을 회복했다.`, "heal"));
   }
 
   /* 연속 공격 스트릭 갱신 + 피로 페널티 (공격을 거듭 낼수록 조금씩 지침, 죽지는 않음) */
@@ -1076,24 +1199,52 @@ function resolveRound(){
 
   b.playerHP = ctx.pHP;
   b.enemyHP = ctx.eHP;
-  b.log = [...b.log, ...ctx.log];
 
+  let onRevealDone;
   if (b.enemyHP <= 0 || b.playerHP <= 0){
     const w = (b.enemyHP<=0 && b.playerHP<=0) ? "무승부" : (b.enemyHP<=0 ? b.player.name : b.enemy.name);
     b.winner = w;
-    b.log = [...b.log, w==="무승부" ? "🤝 무승부!" : `🏆 ${w}의 승리!`];
-    b.phase = "result";
-    b.busy = false;
-    render();
-    return;
+    ctx.log.push(L(w==="무승부" ? "🤝 무승부!" : `🏆 ${w}의 승리!`, w==="무승부" ? "draw" : "win"));
+    onRevealDone = () => { b.phase = "result"; b.busy = false; render(); };
+  } else {
+    onRevealDone = () => {
+      b.round++;
+      b.playerChoice = null;
+      b.enemyChoice = null;
+      b.turnStage = "p1-choose";
+      b.busy = false;
+      render();
+      maybeAnnounceTurn();
+    };
   }
+  revealLogQueue(ctx.log, onRevealDone);
+}
 
-  b.round++;
-  b.playerChoice = null;
-  b.enemyChoice = null;
-  b.turnStage = "p1-choose";
-  b.busy = false;
-  render();
+/* 로그를 한 줄씩 순차적으로 화면에 띄우면서, 줄마다 어울리는 효과음을 재생 */
+function revealLogQueue(queue, onDone){
+  const b = state.battle;
+  b.busy = true;
+  let i = 0;
+  function step(){
+    if (i >= queue.length){ onDone(); return; }
+    const entry = queue[i++];
+    b.log = [...b.log, entry];
+    SoundEngine.play(entry.sound);
+    render();
+    setTimeout(step, 550);
+  }
+  step();
+}
+
+/* 지금 누구 차례인지 음성으로 안내 (지원 안 하는 기기/브라우저는 조용히 무시됨) */
+function maybeAnnounceTurn(){
+  const b = state.battle;
+  if (b.phase !== "battling") return;
+  if (b.turnStage === "p1-choose"){
+    announce(b.mode === "pvp" ? "플레이어 1, 기술을 고르세요" : "기술을 골라보세요");
+  } else if (b.turnStage === "p2-choose"){
+    announce("플레이어 2, 기술을 고르세요");
+  }
 }
 
 /* ============================== 데이터 로드 & 시작 ============================== */

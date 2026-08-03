@@ -230,7 +230,52 @@ Node.js로 배틀 로직을 그대로 복제한 시뮬레이터(`/tmp/sim2.js`, 
 `cap`(현재 0.33)을 낮추거나 `underdogCritBonus`(0.28)를 올리면 됨 —
 단, 대결이 길어지는 트레이드오프가 있음.
 
-## 7. 관리자 시스템
+### 6.13 대결 화면 레이아웃 (전체화면 모드)
+대결 탭에서는 `renderHeader()` 대신 작은 `.battle-top-bar`만 표시하고
+하단 `<footer>`도 생략함(세로 공간 확보). 환경카드·체력박스·간격을
+압축하고 `.battle-log`는 `min(52vh, 480px)`로 크게 키움. 각 단계
+컨테이너는 `wrap battle-wrap` 클래스를 함께 써서 하단 플로팅 버튼
+(나가기/규칙)과 안 겹치게 여백을 확보함.
+
+### 6.14 사운드 (파일 없이 Web Audio API로 직접 합성)
+`SoundEngine`(효과음, `index.html` 상단)과 `BgMusic`(배경음, 두 음을
+번갈아 재생하는 긴장감 있는 루프) 객체가 있음. 음원 파일은 전혀 안 씀
+— 오실레이터로 그때그때 소리를 만들어냄. `SoundEngine.play(이름)`으로
+재생, 프리셋: `click, tick, hit, crit, miss, dodge, heal, fatigue,
+miracle, win, draw, reveal, start, neutral`. 로그 한 줄 한 줄에
+`L(텍스트, 사운드이름)` 헬퍼로 사운드를 붙여서 `resolveRound()`가
+순서대로 공개할 때(`revealLogQueue`) 그 줄에 맞는 소리가 남.
+
+`BgMusic.start()`는 `startBattle()`에서, `BgMusic.stop()`은 나가기/
+처음부터/재대결/다른 탭으로 이동 시 호출됨. 브라우저 자동재생 정책
+때문에 반드시 사용자의 클릭(제스처) 이후에만 소리가 남 —
+`SoundEngine.ensureCtx()`가 AudioContext를 지연 생성/resume함.
+
+**소리를 더 다양하게/고급스럽게 바꾸고 싶다면** `SoundEngine`의
+`presets` 객체 안 각 함수(`tone()` 호출 조합)를 수정하면 됨. 진짜
+음원 파일(mp3 등)을 쓰고 싶다면 `<audio>` 태그 + 저작권 없는 파일을
+따로 준비해 붙이는 방식으로 바꿔야 함(현재는 그런 파일이 전혀 없음).
+
+### 6.15 결과 순차 공개 (`revealLogQueue`)
+`resolveRound()`는 이제 로그를 한 번에 합치지 않고, 계산이 끝난 로그
+배열(`ctx.log`, 각 항목은 `{text, sound}`)을 `revealLogQueue()`에
+넘김. 이 함수가 0.55초 간격으로 한 줄씩 `b.log`에 추가 + 렌더링 +
+효과음 재생을 반복하다가 끝나면 `onDone` 콜백(다음 라운드 준비 또는
+결과 화면 전환)을 실행함. **공개 중에는 `b.busy=true`라서 "결과
+공개하기" 버튼이 다시 안 뜨고 "⚔️ 공개하는 중..."만 보임** —
+`resolveRound()` 맨 앞의 `if (b.busy) return;` 가드와 함께 중복 클릭
+버그를 막아줌. 한 줄 표시 간격(현재 550ms)을 바꾸려면
+`revealLogQueue` 안의 `setTimeout(step, 550)` 숫자만 고치면 됨.
+
+### 6.16 음성 안내 (`announce`, Web Speech API)
+브라우저 내장 음성합성(`speechSynthesis`)을 그대로 사용 — 별도 파일
+없음. `maybeAnnounceTurn()`이 라운드가 새로 시작될 때(`p1-choose`
+진입 시, `p2-choose` 진입 시) 호출됨. 1인용 모드에서는 "기술을
+골라보세요", 2인용 모드에서는 "플레이어 1/2, 기술을 고르세요"라고
+말함. **기기/브라우저마다 한국어 음성 품질과 지원 여부가 다름** —
+지원 안 하면 조용히 무시되도록 try/catch로 감싸둠.
+
+
 
 ### 7.1 비밀번호 잠금
 - `admin.html`, `admin-settings.html` 둘 다 부팅 시
@@ -325,3 +370,7 @@ GET(sha 조회, 없으면 null) → PUT(내용 base64 인코딩 + sha 포함해 
 8. 대결 화면에 규칙 팝업, 결과 공개 버튼(수동 진행), 나가기 버튼 추가
 9. 밸런스를 "약한 쪽도 약 24~27% 확률로 이길 수 있게" 시뮬레이션
    기반으로 재조정 (핵심: 1회 공격 데미지 상한 33% 도입)
+10. 대결 화면을 전체화면처럼(제목/메뉴 숨김) 재구성, 로그창 확대,
+    결과를 한 줄씩 순차 공개 + 상황별 효과음, Web Audio 기반 배경음악,
+    Web Speech API 음성 안내, 규칙 팝업 문구를 태그 기반 설명으로 수정
+    ("언더독 보정"→"언더독의 투지")
