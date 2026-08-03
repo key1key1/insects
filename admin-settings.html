@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>곤충 배틀 도감 · 설정</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap');
+  :root{
+    --cream:#FFF8EA; --card:#FFFFFF; --ink:#3A2E1F; --ink-soft:#8A7A5E;
+    --leaf:#3FA34D; --leaf-dark:#2C7A39; --sun:#FFC83D; --coral:#FF6F59; --coral-dark:#E0503C;
+    --sky:#4FC1E0; --line:#E7DCC6;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Gowun Dodum',sans-serif; }
+  h1,h2,.display{ font-family:'Jua',sans-serif; font-weight:400; }
+
+  #lockScreen{ position:fixed; inset:0; background:var(--ink); display:flex; align-items:center; justify-content:center; z-index:100; }
+  .lock-box{ background:var(--card); border-radius:20px; padding:32px 28px; width:90%; max-width:320px; text-align:center; }
+  .lock-box h2{ font-size:1.2rem; margin:0 0 6px; color:var(--leaf-dark); }
+  .lock-box p{ font-size:.78rem; color:var(--ink-soft); margin:0 0 16px; }
+  .lock-box input{ width:100%; padding:10px 12px; border:2px solid var(--line); border-radius:10px; font-size:1rem; text-align:center; margin-bottom:10px; }
+  .lock-box button{ width:100%; padding:10px; border:none; border-radius:10px; background:var(--leaf); color:#fff; font-family:'Jua',sans-serif; font-size:.95rem; cursor:pointer; }
+  .lock-error{ color:var(--coral-dark); font-size:.78rem; min-height:16px; margin-top:6px; }
+
+  .top-bar{ position:sticky; top:0; z-index:10; background:var(--cream); border-bottom:3px solid var(--line); padding:10px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  .top-bar .title{ font-size:1.05rem; color:var(--leaf-dark); }
+  .top-links{ display:flex; gap:8px; }
+  .link-btn{ background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 12px; color:var(--ink); text-decoration:none; font-size:.78rem; }
+
+  main{ max-width:640px; margin:0 auto; padding:22px 18px 60px; }
+  fieldset{ border:2px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:18px; background:#fff; }
+  legend{ font-family:'Jua',sans-serif; font-size:.95rem; color:var(--leaf-dark); padding:0 6px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:.78rem; font-weight:bold; color:var(--ink-soft); margin-bottom:4px; }
+  .field input[type=text], .field input[type=password]{
+    width:100%; padding:9px 11px; border:2px solid var(--line); border-radius:10px; font-family:inherit; font-size:.9rem; color:var(--ink); background:#fff;
+  }
+  .row3{ display:grid; grid-template-columns:1fr 1fr 90px; gap:12px; }
+  @media (max-width:600px){ .row3{ grid-template-columns:1fr; } }
+  .btn{ font-family:'Jua',sans-serif; border:none; border-radius:999px; cursor:pointer; padding:10px 18px; font-size:.9rem; color:#fff; }
+  .btn-leaf{ background:var(--leaf); } .btn-coral{ background:var(--coral); } .btn-sky{ background:var(--sky); }
+  .btn-ghost{ background:#fff; color:var(--ink); border:2px solid var(--line); }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .small-note{ font-size:.75rem; color:var(--ink-soft); line-height:1.6; margin-top:4px; }
+  .small-note b{ color:var(--coral-dark); }
+  #status{ font-size:.82rem; color:var(--leaf-dark); margin-top:10px; display:block; }
+  #status.error{ color:var(--coral-dark); }
+  #pwStatus{ font-size:.82rem; color:var(--leaf-dark); margin-top:10px; display:block; }
+  #pwStatus.error{ color:var(--coral-dark); }
+  .gh-status{ font-size:.72rem; padding:5px 10px; border-radius:999px; background:var(--cream); color:var(--ink-soft); border:2px solid var(--line); }
+  .gh-status.connected{ background:#E4F4E7; color:var(--leaf-dark); border-color:var(--leaf); }
+</style>
+</head>
+<body>
+
+<div id="lockScreen">
+  <div class="lock-box">
+    <h2>🔒 관리자 전용</h2>
+    <p>비밀번호를 입력해 주세요</p>
+    <input type="password" id="pwInput" placeholder="비밀번호">
+    <button id="pwSubmit">입장하기</button>
+    <p class="lock-error" id="pwError"></p>
+  </div>
+</div>
+
+<div id="mainWrap" style="display:none">
+  <div class="top-bar">
+    <span class="title display">⚙️ 설정</span>
+    <div class="top-links">
+      <a class="link-btn" href="admin.html">🐛 곤충 관리로</a>
+      <a class="link-btn" href="index.html">🏠 홈으로</a>
+    </div>
+  </div>
+
+  <main>
+    <fieldset>
+      <legend>🔗 GitHub 연결 <span class="gh-status" id="ghStatusChip">연결 안 됨</span></legend>
+      <div class="row3">
+        <div class="field"><label>저장소 소유자 (username)</label><input type="text" id="gh-owner" placeholder="예: my-github-id"></div>
+        <div class="field"><label>저장소 이름</label><input type="text" id="gh-repo" placeholder="예: insect-battle-site"></div>
+        <div class="field"><label>브랜치</label><input type="text" id="gh-branch" placeholder="main" value="main"></div>
+      </div>
+      <div class="field"><label>개인 액세스 토큰 (Contents 권한, 이 저장소 전용 권장)</label><input type="password" id="gh-token" placeholder="github_pat_..."></div>
+      <p class="small-note">토큰은 이 브라우저에만 저장돼요(서버로 전송되지 않음). GitHub의 <b>Settings → Developer settings → Fine-grained tokens</b>에서 이 저장소만, <b>Contents: Read and write</b> 권한만 준 토큰을 만들어 사용하세요.</p>
+      <div class="btn-row">
+        <button class="btn btn-sky" id="ghConnectBtn">연결 저장</button>
+        <button class="btn btn-ghost" id="ghDisconnectBtn">연결 해제</button>
+      </div>
+      <span id="status"></span>
+    </fieldset>
+
+    <fieldset>
+      <legend>🔑 비밀번호 변경</legend>
+      <p class="small-note" style="margin-top:0">새 비밀번호를 GitHub의 <code>admin-config.json</code>에 저장해요. <b>GitHub 연결이 되어 있어야 사용할 수 있어요.</b></p>
+      <div class="field"><label>새 비밀번호</label><input type="password" id="newPw1" placeholder="새 비밀번호"></div>
+      <div class="field"><label>새 비밀번호 확인</label><input type="password" id="newPw2" placeholder="다시 입력"></div>
+      <div class="btn-row">
+        <button class="btn btn-coral" id="changePwBtn">비밀번호 변경하기</button>
+      </div>
+      <span id="pwStatus"></span>
+    </fieldset>
+  </main>
+</div>
+
+<script>
+const DEFAULT_PASSWORD_HASH = "01e057bdff041c0a87fe11615f5db2e179e4a0a785d3454e20d060710a1ba8e5"; // insect1234
+let ACTIVE_PASSWORD_HASH = DEFAULT_PASSWORD_HASH;
+
+async function loadPasswordHash(){
+  try{
+    const res = await fetch("admin-config.json");
+    if (res.ok){
+      const cfg = await res.json();
+      if (cfg && cfg.passwordHash) ACTIVE_PASSWORD_HASH = cfg.passwordHash;
+    }
+  }catch(e){}
+}
+async function sha256Hex(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2,'0')).join('');
+}
+async function tryUnlock(){
+  const val = document.getElementById('pwInput').value;
+  const hash = await sha256Hex(val);
+  if (hash === ACTIVE_PASSWORD_HASH){
+    sessionStorage.setItem('admin_unlocked', '1');
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainWrap').style.display = 'block';
+    boot();
+  } else {
+    document.getElementById('pwError').textContent = '비밀번호가 틀렸어요.';
+  }
+}
+document.getElementById('pwSubmit').addEventListener('click', tryUnlock);
+document.getElementById('pwInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+
+(async function initLock(){
+  await loadPasswordHash();
+  if (sessionStorage.getItem('admin_unlocked') === '1'){
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainWrap').style.display = 'block';
+    boot();
+  }
+})();
+
+function ghConfig(){
+  return {
+    owner: localStorage.getItem('gh_owner') || '',
+    repo: localStorage.getItem('gh_repo') || '',
+    branch: localStorage.getItem('gh_branch') || 'main',
+    token: localStorage.getItem('gh_token') || '',
+  };
+}
+function ghConnected(){ const c = ghConfig(); return !!(c.owner && c.repo && c.token); }
+function refreshGhStatusChip(){
+  const chip = document.getElementById('ghStatusChip');
+  if (ghConnected()){ chip.textContent = '☁️ 연결됨'; chip.classList.add('connected'); }
+  else { chip.textContent = '연결 안 됨'; chip.classList.remove('connected'); }
+}
+
+async function githubGetSha(path){
+  const c = ghConfig();
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,'/')}?ref=${encodeURIComponent(c.branch)}`;
+  const res = await fetch(url, { headers: { Authorization: `token ${c.token}`, Accept: 'application/vnd.github+json' } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`(${path}) 조회 실패: ${res.status}`);
+  const j = await res.json();
+  return j.sha;
+}
+async function githubPutFile(path, base64Content, message){
+  const c = ghConfig();
+  const sha = await githubGetSha(path);
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,'/')}`;
+  const body = { message, content: base64Content, branch: c.branch };
+  if (sha) body.sha = sha;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: `token ${c.token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok){
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`(${path}) 저장 실패: ${err.message || res.status}`);
+  }
+  return res.json();
+}
+function utf8ToBase64(str){ return btoa(unescape(encodeURIComponent(str))); }
+
+function boot(){
+  document.getElementById('gh-owner').value = localStorage.getItem('gh_owner') || '';
+  document.getElementById('gh-repo').value = localStorage.getItem('gh_repo') || '';
+  document.getElementById('gh-branch').value = localStorage.getItem('gh_branch') || 'main';
+  document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
+  refreshGhStatusChip();
+}
+
+document.getElementById('ghConnectBtn').addEventListener('click', () => {
+  const owner = document.getElementById('gh-owner').value.trim();
+  const repo = document.getElementById('gh-repo').value.trim();
+  const branch = document.getElementById('gh-branch').value.trim() || 'main';
+  const token = document.getElementById('gh-token').value.trim();
+  if (!owner || !repo || !token){
+    setStatus('저장소 소유자, 이름, 토큰을 모두 입력해주세요.', true); return;
+  }
+  localStorage.setItem('gh_owner', owner);
+  localStorage.setItem('gh_repo', repo);
+  localStorage.setItem('gh_branch', branch);
+  localStorage.setItem('gh_token', token);
+  refreshGhStatusChip();
+  setStatus('GitHub 연결 정보가 저장되었어요.');
+});
+document.getElementById('ghDisconnectBtn').addEventListener('click', () => {
+  ['gh_owner','gh_repo','gh_branch','gh_token'].forEach(k => localStorage.removeItem(k));
+  document.getElementById('gh-owner').value = '';
+  document.getElementById('gh-repo').value = '';
+  document.getElementById('gh-branch').value = 'main';
+  document.getElementById('gh-token').value = '';
+  refreshGhStatusChip();
+  setStatus('연결 정보를 지웠어요.');
+});
+function setStatus(msg, isError){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+}
+
+document.getElementById('changePwBtn').addEventListener('click', async () => {
+  const pw1 = document.getElementById('newPw1').value;
+  const pw2 = document.getElementById('newPw2').value;
+  if (!pw1 || pw1.length < 4){ setPwStatus('4자 이상의 비밀번호를 입력해주세요.', true); return; }
+  if (pw1 !== pw2){ setPwStatus('두 비밀번호가 서로 달라요.', true); return; }
+  if (!ghConnected()){ setPwStatus('GitHub 연결이 먼저 필요해요 (위 항목에서 연결해주세요).', true); return; }
+  setPwStatus('저장하는 중...');
+  try{
+    const hash = await sha256Hex(pw1);
+    await githubPutFile('admin-config.json', utf8ToBase64(JSON.stringify({ passwordHash: hash }, null, 2)), '관리자 비밀번호 변경');
+    ACTIVE_PASSWORD_HASH = hash;
+    document.getElementById('newPw1').value = '';
+    document.getElementById('newPw2').value = '';
+    setPwStatus('✅ 비밀번호가 변경되었어요! 다음 접속부터 새 비밀번호를 사용하세요.');
+  }catch(e){
+    setPwStatus('❌ ' + e.message, true);
+  }
+});
+function setPwStatus(msg, isError){
+  const el = document.getElementById('pwStatus');
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+}
+</script>
+</body>
+</html>

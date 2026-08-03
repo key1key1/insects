@@ -15,7 +15,6 @@
   body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Gowun Dodum',sans-serif; }
   h1,h2,.display{ font-family:'Jua',sans-serif; font-weight:400; }
 
-  /* ---------- 잠금 화면 ---------- */
   #lockScreen{ position:fixed; inset:0; background:var(--ink); display:flex; align-items:center; justify-content:center; z-index:100; }
   .lock-box{ background:var(--card); border-radius:20px; padding:32px 28px; width:90%; max-width:320px; text-align:center; }
   .lock-box h2{ font-size:1.2rem; margin:0 0 6px; color:var(--leaf-dark); }
@@ -24,10 +23,17 @@
   .lock-box button{ width:100%; padding:10px; border:none; border-radius:10px; background:var(--leaf); color:#fff; font-family:'Jua',sans-serif; font-size:.95rem; cursor:pointer; }
   .lock-error{ color:var(--coral-dark); font-size:.78rem; min-height:16px; margin-top:6px; }
 
-  .layout{ display:flex; min-height:100vh; }
-  aside{ width:270px; flex-shrink:0; background:#fff; border-right:2px solid var(--line); padding:16px; overflow-y:auto; max-height:100vh; position:sticky; top:0; }
+  .top-bar{ position:sticky; top:0; z-index:10; background:var(--cream); border-bottom:3px solid var(--line); padding:10px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  .top-bar .title{ font-size:1.05rem; color:var(--leaf-dark); }
+  .top-links{ display:flex; gap:8px; align-items:center; }
+  .top-links a, .top-links span{ font-size:.78rem; text-decoration:none; }
+  .link-btn{ background:#fff; border:2px solid var(--line); border-radius:999px; padding:6px 12px; color:var(--ink); }
+  .gh-status{ font-size:.72rem; padding:5px 10px; border-radius:999px; background:var(--cream); color:var(--ink-soft); border:2px solid var(--line); }
+  .gh-status.connected{ background:#E4F4E7; color:var(--leaf-dark); border-color:var(--leaf); }
+
+  .layout{ display:flex; min-height:calc(100vh - 46px); }
+  aside{ width:270px; flex-shrink:0; background:#fff; border-right:2px solid var(--line); padding:16px; overflow-y:auto; max-height:calc(100vh - 46px); position:sticky; top:46px; }
   main{ flex:1; padding:24px 28px; max-width:760px; }
-  .app-title{ font-size:1.2rem; color:var(--leaf-dark); margin:0 0 4px; }
   .app-sub{ font-size:.75rem; color:var(--ink-soft); margin:0 0 14px; }
   .notice{ background:#FFF3DC; border:2px solid var(--sun); border-radius:14px; padding:12px 14px; font-size:.8rem; line-height:1.6; margin-bottom:18px; }
   .notice b{ color:var(--coral-dark); }
@@ -40,18 +46,17 @@
 
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:.78rem; font-weight:bold; color:var(--ink-soft); margin-bottom:4px; }
-  .field input[type=text], .field input[type=number], .field input[type=password], .field select, .field textarea{
+  .field input[type=text], .field input[type=number], .field select, .field textarea{
     width:100%; padding:9px 11px; border:2px solid var(--line); border-radius:10px; font-family:inherit; font-size:.9rem; color:var(--ink); background:#fff;
   }
   .field textarea{ resize:vertical; min-height:60px; }
   .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .row3{ display:grid; grid-template-columns:1fr 1fr 90px; gap:12px; }
   .row4{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
   .check-group{ display:flex; flex-wrap:wrap; gap:8px; }
   .check-group label{ display:flex; align-items:center; gap:4px; font-size:.8rem; background:var(--cream); padding:6px 10px; border-radius:999px; font-weight:normal; cursor:pointer; }
   fieldset{ border:2px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:16px; }
   legend{ font-family:'Jua',sans-serif; font-size:.85rem; color:var(--leaf-dark); padding:0 6px; }
-  .skill-row{ display:grid; grid-template-columns:1fr 70px 1fr; gap:8px; margin-bottom:8px; align-items:center; }
+  .skill-row{ display:grid; grid-template-columns:1fr 64px 90px 1.4fr; gap:8px; margin-bottom:8px; align-items:center; }
   .btn{ font-family:'Jua',sans-serif; border:none; border-radius:999px; cursor:pointer; padding:10px 18px; font-size:.9rem; color:#fff; }
   .btn-leaf{ background:var(--leaf); } .btn-coral{ background:var(--coral); } .btn-sky{ background:var(--sky); }
   .btn-ghost{ background:#fff; color:var(--ink); border:2px solid var(--line); }
@@ -68,18 +73,18 @@
   .save-bar{ position:sticky; bottom:0; background:var(--cream); border-top:2px solid var(--line); padding:14px 0; margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   #status{ font-size:.8rem; color:var(--leaf-dark); }
   #status.error{ color:var(--coral-dark); }
-  .gh-status{ font-size:.75rem; padding:4px 10px; border-radius:999px; background:var(--cream); color:var(--ink-soft); }
-  .gh-status.connected{ background:#E4F4E7; color:var(--leaf-dark); }
+  .skill-head{ display:grid; grid-template-columns:1fr 64px 90px 1.4fr; gap:8px; font-size:.68rem; color:var(--ink-soft); margin-bottom:4px; padding:0 2px; }
 
-  /* ---------- 모바일 반응형 (자동 적용) ---------- */
   @media (max-width: 760px){
     .layout{ flex-direction:column; }
     aside{ width:100%; max-height:none; position:static; border-right:none; border-bottom:3px solid var(--line); padding:12px; }
     aside #insectList{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; }
     aside .list-item{ flex-shrink:0; width:auto; white-space:nowrap; }
     main{ padding:16px 14px 90px; max-width:none; }
-    .row2, .row3, .row4{ grid-template-columns:1fr; }
-    .skill-row{ grid-template-columns:1fr; gap:6px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px dashed var(--line); }
+    .row2, .row4{ grid-template-columns:1fr; }
+    .skill-row, .skill-head{ grid-template-columns:1fr; }
+    .skill-head{ display:none; }
+    .skill-row{ gap:6px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px dashed var(--line); }
     .photo-box{ flex-direction:column; align-items:stretch; }
     .photo-preview{ width:100%; height:150px; }
     .btn-row{ flex-direction:column; }
@@ -87,6 +92,7 @@
     .save-bar{ flex-direction:column; align-items:stretch; }
     .save-bar .btn{ width:100%; }
     fieldset{ padding:12px 10px; }
+    .top-bar{ flex-direction:column; align-items:flex-start; }
   }
 </style>
 </head>
@@ -102,49 +108,54 @@
   </div>
 </div>
 
-<div class="layout" id="mainLayout" style="display:none">
-  <aside>
-    <p class="app-title" style="font-size:1rem">🐛 곤충 목록</p>
-    <input id="searchList" placeholder="검색..." style="width:100%;padding:7px 10px;border:2px solid var(--line);border-radius:8px;font-size:.8rem;margin-bottom:10px">
-    <div id="insectList"></div>
-    <button class="add-btn" id="addBtn">+ 새 곤충 추가</button>
-  </aside>
-  <main>
-    <h1 class="app-title">곤충 배틀 도감 · 관리자 페이지</h1>
-    <p class="app-sub">내용을 편집한 뒤, GitHub에 바로 저장하거나(연결 필요) JSON 파일로 다운로드해 직접 올릴 수 있어요.</p>
-
-    <fieldset>
-      <legend>🔗 GitHub 연결 <span class="gh-status" id="ghStatusChip">연결 안 됨</span></legend>
-      <div class="row3">
-        <div class="field"><label>저장소 소유자 (username)</label><input type="text" id="gh-owner" placeholder="예: my-github-id"></div>
-        <div class="field"><label>저장소 이름</label><input type="text" id="gh-repo" placeholder="예: insect-battle-site"></div>
-        <div class="field"><label>브랜치</label><input type="text" id="gh-branch" placeholder="main" value="main"></div>
-      </div>
-      <div class="field"><label>개인 액세스 토큰 (Contents 권한, 이 저장소 전용 권장)</label><input type="password" id="gh-token" placeholder="github_pat_..."></div>
-      <p class="small-note">토큰은 이 브라우저에만 저장돼요(서버로 전송되지 않음). GitHub의 <b>Settings → Developer settings → Fine-grained tokens</b>에서 이 저장소만, <b>Contents: Read and write</b> 권한만 준 토큰을 만들어 사용하세요.</p>
-      <div class="btn-row">
-        <button class="btn btn-sky" id="ghConnectBtn">연결 저장</button>
-        <button class="btn btn-ghost" id="ghDisconnectBtn">연결 해제</button>
-      </div>
-    </fieldset>
-
-    <div id="formArea"></div>
-
-    <div class="save-bar">
-      <button class="btn btn-leaf" id="ghSaveBtn">☁️ GitHub에 저장</button>
-      <button class="btn btn-ghost" id="downloadJsonBtn">⬇️ JSON만 다운로드</button>
-      <span id="status"></span>
+<div id="mainWrap" style="display:none">
+  <div class="top-bar">
+    <span class="title display">🐛 곤충 배틀 도감 · 관리자</span>
+    <div class="top-links">
+      <span class="gh-status" id="ghStatusChip">연결 안 됨</span>
+      <a class="link-btn" href="admin-settings.html">⚙️ 설정</a>
+      <a class="link-btn" href="index.html">🏠 홈으로</a>
     </div>
-  </main>
+  </div>
+
+  <div class="layout">
+    <aside>
+      <p class="app-sub" style="font-size:.85rem;font-weight:bold;color:var(--ink)">곤충 목록</p>
+      <input id="searchList" placeholder="검색..." style="width:100%;padding:7px 10px;border:2px solid var(--line);border-radius:8px;font-size:.8rem;margin-bottom:10px">
+      <div id="insectList"></div>
+      <button class="add-btn" id="addBtn">+ 새 곤충 추가</button>
+    </aside>
+    <main>
+      <p class="app-sub">내용을 편집한 뒤, GitHub에 바로 저장하거나(설정에서 연결 필요) JSON 파일로 다운로드해 직접 올릴 수 있어요.</p>
+      <div class="notice">
+        📌 GitHub 연결과 비밀번호 변경은 <a href="admin-settings.html">⚙️ 설정</a> 페이지로 옮겼어요.
+      </div>
+
+      <div id="formArea"></div>
+
+      <div class="save-bar">
+        <button class="btn btn-leaf" id="ghSaveBtn">☁️ GitHub에 저장</button>
+        <button class="btn btn-ghost" id="downloadJsonBtn">⬇️ JSON만 다운로드</button>
+        <span id="status"></span>
+      </div>
+    </main>
+  </div>
 </div>
 
 <script>
-/* ============================== 비밀번호 잠금 ============================== */
-/* 기본 비밀번호는 "insect1234" 예요. 바꾸려면: 브라우저 콘솔에서
-   crypto.subtle.digest('SHA-256', new TextEncoder().encode('새비밀번호'))
-     .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
-   를 실행해 나온 값을 아래 ADMIN_PASSWORD_HASH에 붙여넣으세요. */
-const ADMIN_PASSWORD_HASH = "01e057bdff041c0a87fe11615f5db2e179e4a0a785d3454e20d060710a1ba8e5"; // insect1234
+/* ============================== 비밀번호 잠금 (설정 파일 기반) ============================== */
+const DEFAULT_PASSWORD_HASH = "01e057bdff041c0a87fe11615f5db2e179e4a0a785d3454e20d060710a1ba8e5"; // insect1234
+let ACTIVE_PASSWORD_HASH = DEFAULT_PASSWORD_HASH;
+
+async function loadPasswordHash(){
+  try{
+    const res = await fetch("admin-config.json");
+    if (res.ok){
+      const cfg = await res.json();
+      if (cfg && cfg.passwordHash) ACTIVE_PASSWORD_HASH = cfg.passwordHash;
+    }
+  }catch(e){ /* 설정 파일이 없으면 기본값 사용 */ }
+}
 
 async function sha256Hex(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -154,10 +165,10 @@ async function sha256Hex(text){
 async function tryUnlock(){
   const val = document.getElementById('pwInput').value;
   const hash = await sha256Hex(val);
-  if (hash === ADMIN_PASSWORD_HASH){
+  if (hash === ACTIVE_PASSWORD_HASH){
     sessionStorage.setItem('admin_unlocked', '1');
     document.getElementById('lockScreen').style.display = 'none';
-    document.getElementById('mainLayout').style.display = 'flex';
+    document.getElementById('mainWrap').style.display = 'block';
     boot();
   } else {
     document.getElementById('pwError').textContent = '비밀번호가 틀렸어요.';
@@ -166,30 +177,39 @@ async function tryUnlock(){
 document.getElementById('pwSubmit').addEventListener('click', tryUnlock);
 document.getElementById('pwInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
 
-if (sessionStorage.getItem('admin_unlocked') === '1'){
-  document.getElementById('lockScreen').style.display = 'none';
-  document.getElementById('mainLayout').style.display = 'flex';
-  boot();
-}
+(async function initLock(){
+  await loadPasswordHash();
+  if (sessionStorage.getItem('admin_unlocked') === '1'){
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainWrap').style.display = 'block';
+    boot();
+  }
+})();
 
 /* ============================== 데이터 상수 ============================== */
 const ORDER_OPTIONS = {
   coleoptera:"딱정벌레목", lepidoptera:"나비목", hymenoptera:"벌목", odonata:"잠자리목",
-  orthoptera:"메뚜기목", hemiptera:"매미노린재목", diptera:"파리목", mantodea:"사마귀목", blattodea:"바퀴목"
+  orthoptera:"메뚜기목", hemiptera:"매미노린재목", diptera:"파리목", mantodea:"사마귀목", blattodea:"바퀴목",
+  archaeognatha:"돌좀목", zygentoma:"좀목", ephemeroptera:"하루살이목", plecoptera:"강도래목",
+  dermaptera:"집게벌레목", embioptera:"흰개미붙이목", grylloblattodea:"귀뚜라미붙이목",
+  mantophasmatodea:"대벌레붙이목", phasmida:"대벌레목", zoraptera:"민벌레목", psocodea:"다듬이목",
+  thysanoptera:"총채벌레목", neuroptera:"풀잠자리목", raphidioptera:"약대벌레목", megaloptera:"뱀잠자리목",
+  strepsiptera:"부채벌레목", mecoptera:"밑들이목", siphonaptera:"벼룩목", trichoptera:"날도래목",
 };
-const SHAPE_OPTIONS = ["beetle","butterfly","bee","dragonfly","hopper","truebug","fly","mantis","roach"];
-const HAB_OPTIONS = ["숲","나무위","풀숲","물가","습지","도심","땅"];
+const SHAPE_OPTIONS = ["beetle","butterfly","bee","dragonfly","hopper","truebug","fly","mantis","roach","stick","earwig"];
+const HAB_OPTIONS = ["숲","나무위","풀숲","물","습지","도심","땅"];
 const TIME_OPTIONS = ["낮","밤","새벽","무관"];
 const WEATHER_OPTIONS = ["없음","맑음","비","바람","무더위","흐림"];
+const SKILL_TYPE_OPTIONS = [["attack","⚔️ 공격"], ["defense","🛡️ 방어"]];
 
 let fullData = null;
 let insects = [];
 let selectedId = null;
 let searchTerm = "";
-const pendingPhotos = {}; // { insectId: File }
-const photoMode = {};     // { insectId: 'url' | 'file' }
+const pendingPhotos = {};
+const photoMode = {};
 
-/* ============================== GitHub 연결 ============================== */
+/* ============================== GitHub 연결 (설정은 admin-settings.html에서) ============================== */
 function ghConfig(){
   return {
     owner: localStorage.getItem('gh_owner') || '',
@@ -199,37 +219,11 @@ function ghConfig(){
   };
 }
 function ghConnected(){ const c = ghConfig(); return !!(c.owner && c.repo && c.token); }
-
 function refreshGhStatusChip(){
   const chip = document.getElementById('ghStatusChip');
-  if (ghConnected()){ chip.textContent = '연결됨'; chip.classList.add('connected'); }
+  if (ghConnected()){ chip.textContent = '☁️ 연결됨'; chip.classList.add('connected'); }
   else { chip.textContent = '연결 안 됨'; chip.classList.remove('connected'); }
 }
-
-document.getElementById('ghConnectBtn').addEventListener('click', () => {
-  const owner = document.getElementById('gh-owner').value.trim();
-  const repo = document.getElementById('gh-repo').value.trim();
-  const branch = document.getElementById('gh-branch').value.trim() || 'main';
-  const token = document.getElementById('gh-token').value.trim();
-  if (!owner || !repo || !token){
-    setStatus('저장소 소유자, 이름, 토큰을 모두 입력해주세요.', true); return;
-  }
-  localStorage.setItem('gh_owner', owner);
-  localStorage.setItem('gh_repo', repo);
-  localStorage.setItem('gh_branch', branch);
-  localStorage.setItem('gh_token', token);
-  refreshGhStatusChip();
-  setStatus('GitHub 연결 정보가 저장되었어요.');
-});
-document.getElementById('ghDisconnectBtn').addEventListener('click', () => {
-  ['gh_owner','gh_repo','gh_branch','gh_token'].forEach(k => localStorage.removeItem(k));
-  document.getElementById('gh-owner').value = '';
-  document.getElementById('gh-repo').value = '';
-  document.getElementById('gh-branch').value = 'main';
-  document.getElementById('gh-token').value = '';
-  refreshGhStatusChip();
-  setStatus('연결 정보를 지웠어요.');
-});
 
 async function githubGetSha(path){
   const c = ghConfig();
@@ -240,7 +234,6 @@ async function githubGetSha(path){
   const j = await res.json();
   return j.sha;
 }
-
 async function githubPutFile(path, base64Content, message){
   const c = ghConfig();
   const sha = await githubGetSha(path);
@@ -258,10 +251,7 @@ async function githubPutFile(path, base64Content, message){
   }
   return res.json();
 }
-
-function utf8ToBase64(str){
-  return btoa(unescape(encodeURIComponent(str)));
-}
+function utf8ToBase64(str){ return btoa(unescape(encodeURIComponent(str))); }
 function fileToBase64(file){
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -272,7 +262,7 @@ function fileToBase64(file){
 }
 
 async function saveToGithub(){
-  if (!ghConnected()){ setStatus('먼저 GitHub 연결 정보를 저장해주세요.', true); return; }
+  if (!ghConnected()){ setStatus('먼저 ⚙️ 설정 페이지에서 GitHub 연결을 저장해주세요.', true); return; }
   setStatus('GitHub에 저장하는 중...');
   try{
     for (const id of Object.keys(pendingPhotos)){
@@ -286,7 +276,7 @@ async function saveToGithub(){
       insect.photoUrl = path;
     }
     const output = Object.assign({}, fullData, { insects });
-    await githubPutFile('data/insects.json', utf8ToBase64(JSON.stringify(output, null, 2)), '곤충 데이터 업데이트');
+    await githubPutFile('insects.json', utf8ToBase64(JSON.stringify(output, null, 2)), '곤충 데이터 업데이트');
     Object.keys(pendingPhotos).forEach(k => delete pendingPhotos[k]);
     setStatus('✅ GitHub에 저장 완료! 잠시 후 사이트에 반영돼요.');
     renderForm();
@@ -304,20 +294,15 @@ function setStatus(msg, isError){
 
 /* ============================== 데이터 로드 ============================== */
 async function boot(){
-  document.getElementById('gh-owner').value = localStorage.getItem('gh_owner') || '';
-  document.getElementById('gh-repo').value = localStorage.getItem('gh_repo') || '';
-  document.getElementById('gh-branch').value = localStorage.getItem('gh_branch') || 'main';
-  document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
   refreshGhStatusChip();
-
   try{
-    const res = await fetch("data/insects.json");
+    const res = await fetch("insects.json");
     fullData = await res.json();
     insects = fullData.insects.filter(i => i && i.id);
   }catch(e){
     fullData = { _readme:"", insects: [] };
     insects = [];
-    setStatus('⚠️ data/insects.json을 불러오지 못했어요. (로컬 서버로 열어보세요)', true);
+    setStatus('⚠️ insects.json을 불러오지 못했어요. (로컬 서버로 열어보세요)', true);
   }
   if (insects.length) selectedId = insects[0].id;
   renderList();
@@ -340,8 +325,8 @@ function renderList(){
 function blankInsect(){
   const id = "new_" + Math.random().toString(36).slice(2,8);
   return { id, name:"", order:"coleoptera", shape:"beetle", photoUrl:null, hab:["숲"], time:"낮",
-    stats:{hp:50,atk:50,def:50,spd:50}, features:"", attack:"",
-    skills:[{name:"",power:20,desc:""},{name:"",power:20,desc:""},{name:"",power:20,desc:""}] };
+    stats:{hp:70,atk:50,def:40,spd:50}, features:"", attack:"",
+    skills:[{name:"",power:20,type:"attack",desc:""},{name:"",power:20,type:"attack",desc:""},{name:"",power:15,type:"defense",desc:""}] };
 }
 
 function renderForm(){
@@ -349,7 +334,7 @@ function renderForm(){
   const insect = insects.find(i => i.id === selectedId);
   if (!insect){ area.innerHTML = `<p style="color:var(--ink-soft)">왼쪽에서 곤충을 선택하거나 새로 추가하세요.</p>`; return; }
 
-  const mode = photoMode[insect.id] || (insect.photoUrl ? 'url' : 'url');
+  const mode = photoMode[insect.id] || 'url';
   const habChecks = HAB_OPTIONS.map(h => `<label><input type="checkbox" data-hab="${h}" ${insect.hab.includes(h)?"checked":""}> ${h}</label>`).join("");
 
   area.innerHTML = `
@@ -360,7 +345,7 @@ function renderForm(){
         <div class="field"><label>고유 id (영문)</label><input type="text" id="f-id" value="${escAttr(insect.id)}"></div>
       </div>
       <div class="row2">
-        <div class="field"><label>분류(목)</label>
+        <div class="field"><label>분류(목) · 28종</label>
           <select id="f-order">${Object.entries(ORDER_OPTIONS).map(([k,v])=>`<option value="${k}" ${insect.order===k?"selected":""}>${v}</option>`).join("")}</select>
         </div>
         <div class="field"><label>기본 그림 모양 (사진 없을 때)</label>
@@ -376,6 +361,7 @@ function renderForm(){
           <select id="f-weakweather">${WEATHER_OPTIONS.map(w=>`<option value="${w}" ${((insect.weakWeather||"없음")===w)?"selected":""}>${w}</option>`).join("")}</select>
         </div>
       </div>
+      <div class="field"><label>특징</label><textarea id="f-features">${escText(insect.features)}</textarea></div>
     </fieldset>
 
     <fieldset>
@@ -389,7 +375,7 @@ function renderForm(){
         <div style="flex:1">
           <div id="urlInputWrap" style="display:${mode==='url'?'block':'none'}">
             <input type="text" id="f-photourl" placeholder="https://... (저작권 없는 이미지 링크)" value="${insect.photoUrl && !pendingPhotos[insect.id] ? escAttr(insect.photoUrl) : ''}" style="width:100%;padding:9px 11px;border:2px solid var(--line);border-radius:10px;">
-            <p class="small-note">위키미디어 커먼즈 등 저작권 없는(CC0/CC-BY) 이미지 주소를 붙여넣으세요. GitHub 저장 시 파일 업로드 없이 이 주소만 저장돼요.</p>
+            <p class="small-note">위키미디어 커먼즈 등 저작권 없는(CC0/CC-BY) 이미지 주소를 붙여넣으세요. 끝에 <code>?width=300</code>을 붙이면 로딩이 더 빨라져요.</p>
           </div>
           <div id="fileInputWrap" style="display:${mode==='file'?'block':'none'}">
             <input type="file" accept="image/*" id="f-photofile">
@@ -401,31 +387,28 @@ function renderForm(){
     </fieldset>
 
     <fieldset>
-      <legend>능력치 (0~100)</legend>
+      <legend>⚔️ 배틀 데이터</legend>
+      <p class="small-note" style="margin-top:0">능력치 · 공격 방법 · 기술을 여기서 한번에 관리해요.</p>
       <div class="row4">
         <div class="field"><label>체력</label><input type="number" id="f-hp" value="${insect.stats.hp}"></div>
         <div class="field"><label>공격</label><input type="number" id="f-atk" value="${insect.stats.atk}"></div>
         <div class="field"><label>방어</label><input type="number" id="f-def" value="${insect.stats.def}"></div>
         <div class="field"><label>속도</label><input type="number" id="f-spd" value="${insect.stats.spd}"></div>
       </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>설명</legend>
-      <div class="field"><label>특징</label><textarea id="f-features">${escText(insect.features)}</textarea></div>
       <div class="field"><label>공격 방법</label><textarea id="f-attack">${escText(insect.attack)}</textarea></div>
-    </fieldset>
-
-    <fieldset>
-      <legend>기술 (3개)</legend>
-      ${[0,1,2].map(idx => {
-        const s = insect.skills[idx] || {name:"",power:20,desc:""};
-        return `<div class="skill-row">
-          <input type="text" placeholder="기술 이름" id="f-skill-name-${idx}" value="${escAttr(s.name)}">
-          <input type="number" placeholder="위력" id="f-skill-power-${idx}" value="${s.power}">
-          <input type="text" placeholder="설명" id="f-skill-desc-${idx}" value="${escAttr(s.desc)}">
-        </div>`;
-      }).join("")}
+      <div class="field">
+        <label>기술 (3개, 공격/방어 구분)</label>
+        <div class="skill-head"><span>기술 이름</span><span>위력</span><span>종류</span><span>설명</span></div>
+        ${[0,1,2].map(idx => {
+          const s = insect.skills[idx] || {name:"",power:20,type:"attack",desc:""};
+          return `<div class="skill-row">
+            <input type="text" placeholder="기술 이름" id="f-skill-name-${idx}" value="${escAttr(s.name)}">
+            <input type="number" placeholder="위력" id="f-skill-power-${idx}" value="${s.power}">
+            <select id="f-skill-type-${idx}">${SKILL_TYPE_OPTIONS.map(([v,l])=>`<option value="${v}" ${((s.type||'attack')===v)?"selected":""}>${l}</option>`).join("")}</select>
+            <input type="text" placeholder="설명" id="f-skill-desc-${idx}" value="${escAttr(s.desc)}">
+          </div>`;
+        }).join("")}
+      </div>
     </fieldset>
 
     <div class="btn-row">
@@ -465,17 +448,18 @@ function renderForm(){
     insect.time = document.getElementById("f-time").value;
     const ww = document.getElementById("f-weakweather").value;
     if (ww === "없음") delete insect.weakWeather; else insect.weakWeather = ww;
+    insect.features = document.getElementById("f-features").value;
     insect.stats = {
       hp:Number(document.getElementById("f-hp").value)||0,
       atk:Number(document.getElementById("f-atk").value)||0,
       def:Number(document.getElementById("f-def").value)||0,
       spd:Number(document.getElementById("f-spd").value)||0,
     };
-    insect.features = document.getElementById("f-features").value;
     insect.attack = document.getElementById("f-attack").value;
     insect.skills = [0,1,2].map(idx => ({
       name: document.getElementById(`f-skill-name-${idx}`).value,
       power: Number(document.getElementById(`f-skill-power-${idx}`).value)||0,
+      type: document.getElementById(`f-skill-type-${idx}`).value,
       desc: document.getElementById(`f-skill-desc-${idx}`).value,
     }));
     const curMode = photoMode[oldId] || 'url';
@@ -516,7 +500,7 @@ document.getElementById("downloadJsonBtn").addEventListener("click", () => {
   a.href = URL.createObjectURL(blob);
   a.download = "insects.json";
   a.click();
-  setStatus("⬇️ insects.json 다운로드 완료! data/insects.json에 덮어써 주세요.");
+  setStatus("⬇️ insects.json 다운로드 완료! 저장소 루트의 insects.json에 덮어써 주세요.");
 });
 
 function escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
