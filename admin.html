@@ -14,6 +14,16 @@
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Gowun Dodum',sans-serif; }
   h1,h2,.display{ font-family:'Jua',sans-serif; font-weight:400; }
+
+  /* ---------- 잠금 화면 ---------- */
+  #lockScreen{ position:fixed; inset:0; background:var(--ink); display:flex; align-items:center; justify-content:center; z-index:100; }
+  .lock-box{ background:var(--card); border-radius:20px; padding:32px 28px; width:90%; max-width:320px; text-align:center; }
+  .lock-box h2{ font-size:1.2rem; margin:0 0 6px; color:var(--leaf-dark); }
+  .lock-box p{ font-size:.78rem; color:var(--ink-soft); margin:0 0 16px; }
+  .lock-box input{ width:100%; padding:10px 12px; border:2px solid var(--line); border-radius:10px; font-size:1rem; text-align:center; margin-bottom:10px; }
+  .lock-box button{ width:100%; padding:10px; border:none; border-radius:10px; background:var(--leaf); color:#fff; font-family:'Jua',sans-serif; font-size:.95rem; cursor:pointer; }
+  .lock-error{ color:var(--coral-dark); font-size:.78rem; min-height:16px; margin-top:6px; }
+
   .layout{ display:flex; min-height:100vh; }
   aside{ width:270px; flex-shrink:0; background:#fff; border-right:2px solid var(--line); padding:16px; overflow-y:auto; max-height:100vh; position:sticky; top:0; }
   main{ flex:1; padding:24px 28px; max-width:760px; }
@@ -30,32 +40,51 @@
 
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:.78rem; font-weight:bold; color:var(--ink-soft); margin-bottom:4px; }
-  .field input[type=text], .field input[type=number], .field select, .field textarea{
+  .field input[type=text], .field input[type=number], .field input[type=password], .field select, .field textarea{
     width:100%; padding:9px 11px; border:2px solid var(--line); border-radius:10px; font-family:inherit; font-size:.9rem; color:var(--ink); background:#fff;
   }
   .field textarea{ resize:vertical; min-height:60px; }
   .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .row3{ display:grid; grid-template-columns:1fr 1fr 90px; gap:12px; }
   .row4{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
   .check-group{ display:flex; flex-wrap:wrap; gap:8px; }
   .check-group label{ display:flex; align-items:center; gap:4px; font-size:.8rem; background:var(--cream); padding:6px 10px; border-radius:999px; font-weight:normal; cursor:pointer; }
   fieldset{ border:2px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:16px; }
   legend{ font-family:'Jua',sans-serif; font-size:.85rem; color:var(--leaf-dark); padding:0 6px; }
-  .skill-row{ display:grid; grid-template-columns:1fr 70px 1fr auto; gap:8px; margin-bottom:8px; align-items:center; }
+  .skill-row{ display:grid; grid-template-columns:1fr 70px 1fr; gap:8px; margin-bottom:8px; align-items:center; }
   .btn{ font-family:'Jua',sans-serif; border:none; border-radius:999px; cursor:pointer; padding:10px 18px; font-size:.9rem; color:#fff; }
   .btn-leaf{ background:var(--leaf); } .btn-coral{ background:var(--coral); } .btn-sky{ background:var(--sky); }
   .btn-ghost{ background:#fff; color:var(--ink); border:2px solid var(--line); }
   .btn-danger{ background:none; color:var(--coral-dark); border:2px solid var(--coral); }
+  .btn:disabled{ opacity:.5; cursor:default; }
   .btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
-  .photo-box{ display:flex; align-items:center; gap:14px; }
+  .photo-box{ display:flex; align-items:flex-start; gap:14px; }
   .photo-preview{ width:90px; height:90px; border-radius:14px; background:var(--cream); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:2px solid var(--line); }
   .photo-preview img{ width:100%; height:100%; object-fit:cover; }
   .small-note{ font-size:.72rem; color:var(--ink-soft); margin-top:4px; }
-  .save-bar{ position:sticky; bottom:0; background:var(--cream); border-top:2px solid var(--line); padding:14px 0; margin-top:20px; display:flex; gap:10px; }
-  #status{ font-size:.8rem; color:var(--leaf-dark); align-self:center; }
+  .tab-switch{ display:flex; gap:6px; margin-bottom:8px; }
+  .tab-switch button{ flex:1; padding:7px; border-radius:8px; border:2px solid var(--line); background:#fff; font-size:.78rem; cursor:pointer; color:var(--ink-soft); }
+  .tab-switch button.active{ background:var(--leaf); color:#fff; border-color:var(--leaf); }
+  .save-bar{ position:sticky; bottom:0; background:var(--cream); border-top:2px solid var(--line); padding:14px 0; margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  #status{ font-size:.8rem; color:var(--leaf-dark); }
+  #status.error{ color:var(--coral-dark); }
+  .gh-status{ font-size:.75rem; padding:4px 10px; border-radius:999px; background:var(--cream); color:var(--ink-soft); }
+  .gh-status.connected{ background:#E4F4E7; color:var(--leaf-dark); }
 </style>
 </head>
 <body>
-<div class="layout">
+
+<div id="lockScreen">
+  <div class="lock-box">
+    <h2>🔒 관리자 전용</h2>
+    <p>비밀번호를 입력해 주세요</p>
+    <input type="password" id="pwInput" placeholder="비밀번호">
+    <button id="pwSubmit">입장하기</button>
+    <p class="lock-error" id="pwError"></p>
+  </div>
+</div>
+
+<div class="layout" id="mainLayout" style="display:none">
   <aside>
     <p class="app-title" style="font-size:1rem">🐛 곤충 목록</p>
     <input id="searchList" placeholder="검색..." style="width:100%;padding:7px 10px;border:2px solid var(--line);border-radius:8px;font-size:.8rem;margin-bottom:10px">
@@ -64,21 +93,68 @@
   </aside>
   <main>
     <h1 class="app-title">곤충 배틀 도감 · 관리자 페이지</h1>
-    <p class="app-sub">데이터를 편집한 뒤, 아래 "JSON 다운로드" 버튼으로 받은 파일을 저장소의 <b>data/insects.json</b>에 덮어쓰고 커밋 · 푸시하면 실제 사이트에 반영돼요.</p>
-    <div class="notice">
-      📌 <b>사용법</b> — ① 왼쪽에서 곤충을 고르거나 새로 추가 ② 내용/사진 수정 ③ 사진을 골랐다면 <b>"사진 다운로드"</b>로 받아서 리포지토리의 <code>images/</code> 폴더에 넣기 ④ 다 고치면 아래 <b>"JSON 다운로드"</b>로 받아서 <code>data/insects.json</code> 파일을 통째로 교체 ⑤ GitHub에 커밋 · 푸시
-    </div>
+    <p class="app-sub">내용을 편집한 뒤, GitHub에 바로 저장하거나(연결 필요) JSON 파일로 다운로드해 직접 올릴 수 있어요.</p>
+
+    <fieldset>
+      <legend>🔗 GitHub 연결 <span class="gh-status" id="ghStatusChip">연결 안 됨</span></legend>
+      <div class="row3">
+        <div class="field"><label>저장소 소유자 (username)</label><input type="text" id="gh-owner" placeholder="예: my-github-id"></div>
+        <div class="field"><label>저장소 이름</label><input type="text" id="gh-repo" placeholder="예: insect-battle-site"></div>
+        <div class="field"><label>브랜치</label><input type="text" id="gh-branch" placeholder="main" value="main"></div>
+      </div>
+      <div class="field"><label>개인 액세스 토큰 (Contents 권한, 이 저장소 전용 권장)</label><input type="password" id="gh-token" placeholder="github_pat_..."></div>
+      <p class="small-note">토큰은 이 브라우저에만 저장돼요(서버로 전송되지 않음). GitHub의 <b>Settings → Developer settings → Fine-grained tokens</b>에서 이 저장소만, <b>Contents: Read and write</b> 권한만 준 토큰을 만들어 사용하세요.</p>
+      <div class="btn-row">
+        <button class="btn btn-sky" id="ghConnectBtn">연결 저장</button>
+        <button class="btn btn-ghost" id="ghDisconnectBtn">연결 해제</button>
+      </div>
+    </fieldset>
 
     <div id="formArea"></div>
 
     <div class="save-bar">
-      <button class="btn btn-leaf" id="downloadJsonBtn">⬇️ JSON 다운로드 (전체 데이터)</button>
+      <button class="btn btn-leaf" id="ghSaveBtn">☁️ GitHub에 저장</button>
+      <button class="btn btn-ghost" id="downloadJsonBtn">⬇️ JSON만 다운로드</button>
       <span id="status"></span>
     </div>
   </main>
 </div>
 
 <script>
+/* ============================== 비밀번호 잠금 ============================== */
+/* 기본 비밀번호는 "insect1234" 예요. 바꾸려면: 브라우저 콘솔에서
+   crypto.subtle.digest('SHA-256', new TextEncoder().encode('새비밀번호'))
+     .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
+   를 실행해 나온 값을 아래 ADMIN_PASSWORD_HASH에 붙여넣으세요. */
+const ADMIN_PASSWORD_HASH = "01e057bdff041c0a87fe11615f5db2e179e4a0a785d3454e20d060710a1ba8e5"; // insect1234
+
+async function sha256Hex(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2,'0')).join('');
+}
+
+async function tryUnlock(){
+  const val = document.getElementById('pwInput').value;
+  const hash = await sha256Hex(val);
+  if (hash === ADMIN_PASSWORD_HASH){
+    sessionStorage.setItem('admin_unlocked', '1');
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainLayout').style.display = 'flex';
+    boot();
+  } else {
+    document.getElementById('pwError').textContent = '비밀번호가 틀렸어요.';
+  }
+}
+document.getElementById('pwSubmit').addEventListener('click', tryUnlock);
+document.getElementById('pwInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+
+if (sessionStorage.getItem('admin_unlocked') === '1'){
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('mainLayout').style.display = 'flex';
+  boot();
+}
+
+/* ============================== 데이터 상수 ============================== */
 const ORDER_OPTIONS = {
   coleoptera:"딱정벌레목", lepidoptera:"나비목", hymenoptera:"벌목", odonata:"잠자리목",
   orthoptera:"메뚜기목", hemiptera:"매미노린재목", diptera:"파리목", mantodea:"사마귀목", blattodea:"바퀴목"
@@ -88,21 +164,142 @@ const HAB_OPTIONS = ["숲","나무위","풀숲","물가","습지","도심","땅"
 const TIME_OPTIONS = ["낮","밤","새벽","무관"];
 const WEATHER_OPTIONS = ["없음","맑음","비","바람","무더위","흐림"];
 
-let fullData = null;      // 원본 json 전체 ( _readme, _template 포함 )
-let insects = [];         // 편집 대상 배열
+let fullData = null;
+let insects = [];
 let selectedId = null;
-let pendingPhotoFile = null; // 현재 선택 항목에 방금 업로드한 사진 파일(다운로드용)
 let searchTerm = "";
+const pendingPhotos = {}; // { insectId: File }
+const photoMode = {};     // { insectId: 'url' | 'file' }
 
+/* ============================== GitHub 연결 ============================== */
+function ghConfig(){
+  return {
+    owner: localStorage.getItem('gh_owner') || '',
+    repo: localStorage.getItem('gh_repo') || '',
+    branch: localStorage.getItem('gh_branch') || 'main',
+    token: localStorage.getItem('gh_token') || '',
+  };
+}
+function ghConnected(){ const c = ghConfig(); return !!(c.owner && c.repo && c.token); }
+
+function refreshGhStatusChip(){
+  const chip = document.getElementById('ghStatusChip');
+  if (ghConnected()){ chip.textContent = '연결됨'; chip.classList.add('connected'); }
+  else { chip.textContent = '연결 안 됨'; chip.classList.remove('connected'); }
+}
+
+document.getElementById('ghConnectBtn').addEventListener('click', () => {
+  const owner = document.getElementById('gh-owner').value.trim();
+  const repo = document.getElementById('gh-repo').value.trim();
+  const branch = document.getElementById('gh-branch').value.trim() || 'main';
+  const token = document.getElementById('gh-token').value.trim();
+  if (!owner || !repo || !token){
+    setStatus('저장소 소유자, 이름, 토큰을 모두 입력해주세요.', true); return;
+  }
+  localStorage.setItem('gh_owner', owner);
+  localStorage.setItem('gh_repo', repo);
+  localStorage.setItem('gh_branch', branch);
+  localStorage.setItem('gh_token', token);
+  refreshGhStatusChip();
+  setStatus('GitHub 연결 정보가 저장되었어요.');
+});
+document.getElementById('ghDisconnectBtn').addEventListener('click', () => {
+  ['gh_owner','gh_repo','gh_branch','gh_token'].forEach(k => localStorage.removeItem(k));
+  document.getElementById('gh-owner').value = '';
+  document.getElementById('gh-repo').value = '';
+  document.getElementById('gh-branch').value = 'main';
+  document.getElementById('gh-token').value = '';
+  refreshGhStatusChip();
+  setStatus('연결 정보를 지웠어요.');
+});
+
+async function githubGetSha(path){
+  const c = ghConfig();
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,'/')}?ref=${encodeURIComponent(c.branch)}`;
+  const res = await fetch(url, { headers: { Authorization: `token ${c.token}`, Accept: 'application/vnd.github+json' } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`(${path}) 조회 실패: ${res.status}`);
+  const j = await res.json();
+  return j.sha;
+}
+
+async function githubPutFile(path, base64Content, message){
+  const c = ghConfig();
+  const sha = await githubGetSha(path);
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,'/')}`;
+  const body = { message, content: base64Content, branch: c.branch };
+  if (sha) body.sha = sha;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: `token ${c.token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok){
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`(${path}) 저장 실패: ${err.message || res.status}`);
+  }
+  return res.json();
+}
+
+function utf8ToBase64(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function saveToGithub(){
+  if (!ghConnected()){ setStatus('먼저 GitHub 연결 정보를 저장해주세요.', true); return; }
+  setStatus('GitHub에 저장하는 중...');
+  try{
+    for (const id of Object.keys(pendingPhotos)){
+      const file = pendingPhotos[id];
+      const insect = insects.find(i => i.id === id);
+      if (!insect) continue;
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `images/${id}.${ext}`;
+      const base64 = await fileToBase64(file);
+      await githubPutFile(path, base64, `사진 추가/교체: ${insect.name}`);
+      insect.photoUrl = path;
+    }
+    const output = Object.assign({}, fullData, { insects });
+    await githubPutFile('data/insects.json', utf8ToBase64(JSON.stringify(output, null, 2)), '곤충 데이터 업데이트');
+    Object.keys(pendingPhotos).forEach(k => delete pendingPhotos[k]);
+    setStatus('✅ GitHub에 저장 완료! 잠시 후 사이트에 반영돼요.');
+    renderForm();
+  }catch(e){
+    setStatus('❌ ' + e.message, true);
+  }
+}
+document.getElementById('ghSaveBtn').addEventListener('click', saveToGithub);
+
+function setStatus(msg, isError){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+}
+
+/* ============================== 데이터 로드 ============================== */
 async function boot(){
+  document.getElementById('gh-owner').value = localStorage.getItem('gh_owner') || '';
+  document.getElementById('gh-repo').value = localStorage.getItem('gh_repo') || '';
+  document.getElementById('gh-branch').value = localStorage.getItem('gh_branch') || 'main';
+  document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
+  refreshGhStatusChip();
+
   try{
     const res = await fetch("data/insects.json");
     fullData = await res.json();
-    insects = fullData.insects.filter(i=>i && i.id);
+    insects = fullData.insects.filter(i => i && i.id);
   }catch(e){
     fullData = { _readme:"", insects: [] };
     insects = [];
-    document.getElementById("status").textContent = "⚠️ data/insects.json을 불러오지 못했어요. (로컬 서버로 열어보세요)";
+    setStatus('⚠️ data/insects.json을 불러오지 못했어요. (로컬 서버로 열어보세요)', true);
   }
   if (insects.length) selectedId = insects[0].id;
   renderList();
@@ -111,14 +308,14 @@ async function boot(){
 
 function renderList(){
   const box = document.getElementById("insectList");
-  const list = insects.filter(i=>i.name.includes(searchTerm));
-  box.innerHTML = list.map(i=>`
+  const list = insects.filter(i => i.name.includes(searchTerm));
+  box.innerHTML = list.map(i => `
     <button class="list-item ${i.id===selectedId?'active':''}" data-select="${i.id}">
       <span>${i.name || "(이름 없음)"}</span>
       <span class="tag">${ORDER_OPTIONS[i.order]||""}</span>
     </button>`).join("") || `<p style="font-size:.8rem;color:var(--ink-soft)">곤충이 없어요</p>`;
-  box.querySelectorAll("[data-select]").forEach(b=>{
-    b.addEventListener("click", ()=>{ selectedId = b.getAttribute("data-select"); pendingPhotoFile=null; renderList(); renderForm(); });
+  box.querySelectorAll("[data-select]").forEach(b => {
+    b.addEventListener("click", () => { selectedId = b.getAttribute("data-select"); renderList(); renderForm(); });
   });
 }
 
@@ -131,11 +328,11 @@ function blankInsect(){
 
 function renderForm(){
   const area = document.getElementById("formArea");
-  const insect = insects.find(i=>i.id===selectedId);
+  const insect = insects.find(i => i.id === selectedId);
   if (!insect){ area.innerHTML = `<p style="color:var(--ink-soft)">왼쪽에서 곤충을 선택하거나 새로 추가하세요.</p>`; return; }
 
-  const habChecks = HAB_OPTIONS.map(h=>`
-    <label><input type="checkbox" data-hab="${h}" ${insect.hab.includes(h)?"checked":""}> ${h}</label>`).join("");
+  const mode = photoMode[insect.id] || (insect.photoUrl ? 'url' : 'url');
+  const habChecks = HAB_OPTIONS.map(h => `<label><input type="checkbox" data-hab="${h}" ${insect.hab.includes(h)?"checked":""}> ${h}</label>`).join("");
 
   area.innerHTML = `
     <fieldset>
@@ -165,15 +362,22 @@ function renderForm(){
 
     <fieldset>
       <legend>사진</legend>
+      <div class="tab-switch">
+        <button type="button" id="modeUrlBtn" class="${mode==='url'?'active':''}">URL 붙여넣기</button>
+        <button type="button" id="modeFileBtn" class="${mode==='file'?'active':''}">파일 업로드</button>
+      </div>
       <div class="photo-box">
         <div class="photo-preview" id="photoPreview">${insect.photoUrl ? `<img src="${escAttr(insect.photoUrl)}">` : "🐛"}</div>
-        <div>
-          <input type="file" accept="image/*" id="f-photo">
-          <p class="small-note">사진을 고르면 아래 "사진 다운로드"로 받아서 리포지토리의 <b>images/</b> 폴더에 넣어주세요. 경로는 자동으로 <code>images/${insect.id}.jpg</code> 형태로 채워져요.</p>
-          <div class="btn-row">
-            <button class="btn btn-sky" id="downloadPhotoBtn" style="display:none">⬇️ 사진 다운로드</button>
-            <button class="btn btn-ghost" id="clearPhotoBtn">사진 없이(그림만) 사용</button>
+        <div style="flex:1">
+          <div id="urlInputWrap" style="display:${mode==='url'?'block':'none'}">
+            <input type="text" id="f-photourl" placeholder="https://... (저작권 없는 이미지 링크)" value="${insect.photoUrl && !pendingPhotos[insect.id] ? escAttr(insect.photoUrl) : ''}" style="width:100%;padding:9px 11px;border:2px solid var(--line);border-radius:10px;">
+            <p class="small-note">위키미디어 커먼즈 등 저작권 없는(CC0/CC-BY) 이미지 주소를 붙여넣으세요. GitHub 저장 시 파일 업로드 없이 이 주소만 저장돼요.</p>
           </div>
+          <div id="fileInputWrap" style="display:${mode==='file'?'block':'none'}">
+            <input type="file" accept="image/*" id="f-photofile">
+            <p class="small-note">사진을 고르면 "GitHub에 저장" 시 <code>images/${insect.id}.확장자</code>로 함께 업로드돼요.</p>
+          </div>
+          <button class="btn btn-ghost" id="clearPhotoBtn" style="margin-top:8px">사진 없이(그림만) 사용</button>
         </div>
       </div>
     </fieldset>
@@ -196,7 +400,7 @@ function renderForm(){
 
     <fieldset>
       <legend>기술 (3개)</legend>
-      ${[0,1,2].map(idx=>{
+      ${[0,1,2].map(idx => {
         const s = insect.skills[idx] || {name:"",power:20,desc:""};
         return `<div class="skill-row">
           <input type="text" placeholder="기술 이름" id="f-skill-name-${idx}" value="${escAttr(s.name)}">
@@ -212,37 +416,33 @@ function renderForm(){
     </div>
   `;
 
-  document.getElementById("f-photo").addEventListener("change", (e)=>{
-    const file = e.target.files[0];
-    if (!file) return;
-    pendingPhotoFile = file;
-    const url = URL.createObjectURL(file);
-    document.getElementById("photoPreview").innerHTML = `<img src="${url}">`;
-    document.getElementById("downloadPhotoBtn").style.display = "inline-flex";
-    const ext = (file.name.split(".").pop()||"jpg").toLowerCase();
-    insect.photoUrl = `images/${insect.id}.${ext}`;
-  });
-  document.getElementById("downloadPhotoBtn").addEventListener("click", ()=>{
-    if (!pendingPhotoFile) return;
-    const ext = (pendingPhotoFile.name.split(".").pop()||"jpg").toLowerCase();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(pendingPhotoFile);
-    a.download = `${insect.id}.${ext}`;
-    a.click();
-  });
-  document.getElementById("clearPhotoBtn").addEventListener("click", ()=>{
-    insect.photoUrl = null; pendingPhotoFile = null;
-    document.getElementById("photoPreview").innerHTML = "🐛";
-    document.getElementById("downloadPhotoBtn").style.display = "none";
+  document.getElementById('modeUrlBtn').addEventListener('click', () => { photoMode[insect.id] = 'url'; renderForm(); });
+  document.getElementById('modeFileBtn').addEventListener('click', () => { photoMode[insect.id] = 'file'; renderForm(); });
+
+  const fileInput = document.getElementById('f-photofile');
+  if (fileInput){
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      pendingPhotos[insect.id] = file;
+      document.getElementById('photoPreview').innerHTML = `<img src="${URL.createObjectURL(file)}">`;
+    });
+  }
+  document.getElementById('clearPhotoBtn').addEventListener('click', () => {
+    insect.photoUrl = null;
+    delete pendingPhotos[insect.id];
+    document.getElementById('photoPreview').innerHTML = '🐛';
+    const u = document.getElementById('f-photourl'); if (u) u.value = '';
   });
 
-  document.getElementById("applyBtn").addEventListener("click", ()=>{
+  document.getElementById("applyBtn").addEventListener("click", () => {
     const newId = document.getElementById("f-id").value.trim();
     insect.name = document.getElementById("f-name").value.trim();
+    const oldId = insect.id;
     insect.id = newId || insect.id;
     insect.order = document.getElementById("f-order").value;
     insect.shape = document.getElementById("f-shape").value;
-    insect.hab = HAB_OPTIONS.filter(h=> document.querySelector(`[data-hab="${h}"]`).checked);
+    insect.hab = HAB_OPTIONS.filter(h => document.querySelector(`[data-hab="${h}"]`).checked);
     if (insect.hab.length === 0) insect.hab = ["숲"];
     insect.time = document.getElementById("f-time").value;
     const ww = document.getElementById("f-weakweather").value;
@@ -255,46 +455,54 @@ function renderForm(){
     };
     insect.features = document.getElementById("f-features").value;
     insect.attack = document.getElementById("f-attack").value;
-    insect.skills = [0,1,2].map(idx=>({
+    insect.skills = [0,1,2].map(idx => ({
       name: document.getElementById(`f-skill-name-${idx}`).value,
       power: Number(document.getElementById(`f-skill-power-${idx}`).value)||0,
       desc: document.getElementById(`f-skill-desc-${idx}`).value,
     }));
+    const curMode = photoMode[oldId] || 'url';
+    if (curMode === 'url'){
+      const urlVal = document.getElementById('f-photourl').value.trim();
+      insect.photoUrl = urlVal || null;
+      delete pendingPhotos[oldId];
+    }
+    if (oldId !== insect.id){
+      if (pendingPhotos[oldId]){ pendingPhotos[insect.id] = pendingPhotos[oldId]; delete pendingPhotos[oldId]; }
+      if (photoMode[oldId]){ photoMode[insect.id] = photoMode[oldId]; delete photoMode[oldId]; }
+    }
     selectedId = insect.id;
-    document.getElementById("status").textContent = "✔️ 반영됨 (메모리상). 완료되면 JSON 다운로드를 눌러주세요.";
+    setStatus("✔️ 반영됨 (메모리상). GitHub 저장 또는 JSON 다운로드를 눌러주세요.");
     renderList(); renderForm();
   });
 
-  document.getElementById("deleteBtn").addEventListener("click", ()=>{
+  document.getElementById("deleteBtn").addEventListener("click", () => {
     if (!confirm(`'${insect.name}'을(를) 목록에서 삭제할까요?`)) return;
-    insects = insects.filter(i=>i.id!==insect.id);
-    selectedId = insects.length? insects[0].id : null;
+    insects = insects.filter(i => i.id !== insect.id);
+    delete pendingPhotos[insect.id];
+    selectedId = insects.length ? insects[0].id : null;
     renderList(); renderForm();
   });
 }
 
-document.getElementById("searchList").addEventListener("input", (e)=>{ searchTerm = e.target.value; renderList(); });
-document.getElementById("addBtn").addEventListener("click", ()=>{
+document.getElementById("searchList").addEventListener("input", (e) => { searchTerm = e.target.value; renderList(); });
+document.getElementById("addBtn").addEventListener("click", () => {
   const b = blankInsect();
   insects.push(b);
   selectedId = b.id;
-  pendingPhotoFile = null;
   renderList(); renderForm();
 });
-document.getElementById("downloadJsonBtn").addEventListener("click", ()=>{
+document.getElementById("downloadJsonBtn").addEventListener("click", () => {
   const output = Object.assign({}, fullData, { insects });
   const blob = new Blob([JSON.stringify(output, null, 2)], { type:"application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "insects.json";
   a.click();
-  document.getElementById("status").textContent = "⬇️ insects.json 다운로드 완료! data/insects.json에 덮어써 주세요.";
+  setStatus("⬇️ insects.json 다운로드 완료! data/insects.json에 덮어써 주세요.");
 });
 
 function escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
 function escText(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
-
-boot();
 </script>
 </body>
 </html>
