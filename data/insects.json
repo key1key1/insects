@@ -33,7 +33,7 @@
       "name": "장수풍뎅이",
       "order": "coleoptera",
       "shape": "beetle",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Trypoxylus_dichotomus.jpg",
       "hab": [
         "숲",
         "나무위"
@@ -70,7 +70,7 @@
       "name": "사슴벌레",
       "order": "coleoptera",
       "shape": "beetle",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Little_stag-beetle.JPG",
       "hab": [
         "숲",
         "나무위"
@@ -107,7 +107,7 @@
       "name": "무당벌레",
       "order": "coleoptera",
       "shape": "beetle",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ladybird.jpg",
       "hab": [
         "풀숲",
         "도심"
@@ -144,7 +144,7 @@
       "name": "반딧불이",
       "order": "coleoptera",
       "shape": "beetle",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Common_Eastern_Firefly_(27524503504).jpg",
       "hab": [
         "습지",
         "물가"
@@ -181,7 +181,7 @@
       "name": "호랑나비",
       "order": "lepidoptera",
       "shape": "butterfly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Butter_fly_in_Itami_greenhouse_1.jpg",
       "hab": [
         "풀숲",
         "숲"
@@ -219,7 +219,7 @@
       "name": "배추흰나비",
       "order": "lepidoptera",
       "shape": "butterfly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pieris_rapae_male.jpg",
       "hab": [
         "풀숲",
         "도심"
@@ -257,7 +257,7 @@
       "name": "누에나방",
       "order": "lepidoptera",
       "shape": "butterfly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/CSIRO_ScienceImage_10746_An_adult_silkworm_moth.jpg",
       "hab": [
         "도심",
         "나무위"
@@ -295,7 +295,7 @@
       "name": "박각시나방",
       "order": "lepidoptera",
       "shape": "butterfly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Convolvulus_hawk-moth_(Agrius_convolvuli)_2.jpg",
       "hab": [
         "숲",
         "풀숲"
@@ -333,7 +333,7 @@
       "name": "꿀벌",
       "order": "hymenoptera",
       "shape": "bee",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Apis_mellifera_Western_honey_bee.jpg",
       "hab": [
         "풀숲",
         "도심"
@@ -371,7 +371,7 @@
       "name": "말벌",
       "order": "hymenoptera",
       "shape": "bee",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Asian_hornet_(Vespa_velutina).jpg",
       "hab": [
         "숲",
         "나무위"
@@ -408,7 +408,7 @@
       "name": "개미",
       "order": "hymenoptera",
       "shape": "bee",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Portrait_of_an_ant,_profile_view.jpg",
       "hab": [
         "땅",
         "도심"
@@ -445,7 +445,7 @@
       "name": "맵시벌",
       "order": "hymenoptera",
       "shape": "bee",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ichneumonid_Wasp_-_male.jpg",
       "hab": [
         "숲",
         "풀숲"
@@ -482,7 +482,7 @@
       "name": "왕잠자리",
       "order": "odonata",
       "shape": "dragonfly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Anax_imperator_qtl2.jpg",
       "hab": [
         "물가",
         "습지"
@@ -520,7 +520,7 @@
       "name": "실잠자리",
       "order": "odonata",
       "shape": "dragonfly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Coenagrion_puella_3(loz).jpg",
       "hab": [
         "물가",
         "습지"
@@ -558,7 +558,7 @@
       "name": "벼메뚜기",
       "order": "orthoptera",
       "shape": "hopper",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Chinese_rice_grasshopper_(Oxya_chinensis).jpg",
       "hab": [
         "풀숲",
         "땅"
@@ -595,7 +595,7 @@
       "name": "여치",
       "order": "orthoptera",
       "shape": "hopper",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Katydid_tx.jpg",
       "hab": [
         "숲",
         "풀숲"
@@ -632,7 +632,7 @@
       "name": "귀뚜라미",
       "order": "orthoptera",
       "shape": "hopper",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/African.field.cricket.arp.jpg",
       "hab": [
         "땅",
         "도심"
@@ -669,7 +669,7 @@
       "name": "방아깨비",
       "order": "orthoptera",
       "shape": "hopper",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Acrida_cinerea_on_the_ground.jpg",
       "hab": [
         "풀숲",
         "땅"
@@ -706,7 +706,7 @@
       "name": "매미",
       "order": "hemiptera",
       "shape": "truebug",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cicada_Close-Up.jpg",
       "hab": [
         "나무위",
         "숲"
@@ -743,7 +743,7 @@
       "name": "노린재",
       "order": "hemiptera",
       "shape": "truebug",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Green_shield_bug_(Palomena_prasina)_3.jpg",
       "hab": [
         "풀숲",
         "도심"
@@ -780,7 +780,7 @@
       "name": "진딧물",
       "order": "hemiptera",
       "shape": "truebug",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Aphids_May_2010-3.jpg",
       "hab": [
         "풀숲"
       ],
@@ -817,7 +817,7 @@
       "name": "물자라",
       "order": "hemiptera",
       "shape": "truebug",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Giant_Water_Bug_(Belostomatidae)_(9642998933).jpg",
       "hab": [
         "물가",
         "습지"
@@ -854,7 +854,7 @@
       "name": "모기",
       "order": "diptera",
       "shape": "fly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Aedes_aegypti.jpg",
       "hab": [
         "물가",
         "습지",
@@ -894,7 +894,7 @@
       "name": "파리",
       "order": "diptera",
       "shape": "fly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Musca_domestica_housefly.jpg",
       "hab": [
         "도심",
         "땅"
@@ -932,7 +932,7 @@
       "name": "등에",
       "order": "diptera",
       "shape": "fly",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pale_Giant_Horsefly_(Tabanus_bovinus)_(34667654834).jpg",
       "hab": [
         "숲",
         "물가"
@@ -970,7 +970,7 @@
       "name": "사마귀",
       "order": "mantodea",
       "shape": "mantis",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/European_praying_mantis_(Mantis_religiosa)_green_female_Dobruja.jpg",
       "hab": [
         "풀숲",
         "숲",
@@ -1008,7 +1008,7 @@
       "name": "바퀴벌레",
       "order": "blattodea",
       "shape": "roach",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Periplaneta_americana_2013.jpg",
       "hab": [
         "도심",
         "땅"
@@ -1045,7 +1045,7 @@
       "name": "흰개미",
       "order": "blattodea",
       "shape": "roach",
-      "photoUrl": null,
+      "photoUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/CSIRO_ScienceImage_2217_The_soldiers_workers_and_nymphs_of_a_colony_of_Nasutitermes_exitiosus_termites.jpg",
       "hab": [
         "땅",
         "나무위"
