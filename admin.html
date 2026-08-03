@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>곤충 배틀 도감 · 관리자</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap');
+  :root{
+    --cream:#FFF8EA; --card:#FFFFFF; --ink:#3A2E1F; --ink-soft:#8A7A5E;
+    --leaf:#3FA34D; --leaf-dark:#2C7A39; --sun:#FFC83D; --coral:#FF6F59; --coral-dark:#E0503C;
+    --sky:#4FC1E0; --line:#E7DCC6;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--cream); color:var(--ink); font-family:'Gowun Dodum',sans-serif; }
+  h1,h2,.display{ font-family:'Jua',sans-serif; font-weight:400; }
+  .layout{ display:flex; min-height:100vh; }
+  aside{ width:270px; flex-shrink:0; background:#fff; border-right:2px solid var(--line); padding:16px; overflow-y:auto; max-height:100vh; position:sticky; top:0; }
+  main{ flex:1; padding:24px 28px; max-width:760px; }
+  .app-title{ font-size:1.2rem; color:var(--leaf-dark); margin:0 0 4px; }
+  .app-sub{ font-size:.75rem; color:var(--ink-soft); margin:0 0 14px; }
+  .notice{ background:#FFF3DC; border:2px solid var(--sun); border-radius:14px; padding:12px 14px; font-size:.8rem; line-height:1.6; margin-bottom:18px; }
+  .notice b{ color:var(--coral-dark); }
+  .list-item{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:none; border:none; padding:9px 8px; border-radius:10px; cursor:pointer; font-size:.85rem; color:var(--ink); }
+  .list-item:hover{ background:var(--cream); }
+  .list-item.active{ background:var(--leaf); color:#fff; }
+  .list-item .tag{ font-size:.65rem; opacity:.75; }
+  .add-btn{ width:100%; margin-top:10px; padding:10px; border-radius:10px; border:2px dashed var(--line); background:none; color:var(--ink-soft); cursor:pointer; font-size:.85rem; }
+  .add-btn:hover{ border-color:var(--leaf); color:var(--leaf-dark); }
+
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:.78rem; font-weight:bold; color:var(--ink-soft); margin-bottom:4px; }
+  .field input[type=text], .field input[type=number], .field select, .field textarea{
+    width:100%; padding:9px 11px; border:2px solid var(--line); border-radius:10px; font-family:inherit; font-size:.9rem; color:var(--ink); background:#fff;
+  }
+  .field textarea{ resize:vertical; min-height:60px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .row4{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .check-group{ display:flex; flex-wrap:wrap; gap:8px; }
+  .check-group label{ display:flex; align-items:center; gap:4px; font-size:.8rem; background:var(--cream); padding:6px 10px; border-radius:999px; font-weight:normal; cursor:pointer; }
+  fieldset{ border:2px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:16px; }
+  legend{ font-family:'Jua',sans-serif; font-size:.85rem; color:var(--leaf-dark); padding:0 6px; }
+  .skill-row{ display:grid; grid-template-columns:1fr 70px 1fr auto; gap:8px; margin-bottom:8px; align-items:center; }
+  .btn{ font-family:'Jua',sans-serif; border:none; border-radius:999px; cursor:pointer; padding:10px 18px; font-size:.9rem; color:#fff; }
+  .btn-leaf{ background:var(--leaf); } .btn-coral{ background:var(--coral); } .btn-sky{ background:var(--sky); }
+  .btn-ghost{ background:#fff; color:var(--ink); border:2px solid var(--line); }
+  .btn-danger{ background:none; color:var(--coral-dark); border:2px solid var(--coral); }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+  .photo-box{ display:flex; align-items:center; gap:14px; }
+  .photo-preview{ width:90px; height:90px; border-radius:14px; background:var(--cream); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:2px solid var(--line); }
+  .photo-preview img{ width:100%; height:100%; object-fit:cover; }
+  .small-note{ font-size:.72rem; color:var(--ink-soft); margin-top:4px; }
+  .save-bar{ position:sticky; bottom:0; background:var(--cream); border-top:2px solid var(--line); padding:14px 0; margin-top:20px; display:flex; gap:10px; }
+  #status{ font-size:.8rem; color:var(--leaf-dark); align-self:center; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <p class="app-title" style="font-size:1rem">🐛 곤충 목록</p>
+    <input id="searchList" placeholder="검색..." style="width:100%;padding:7px 10px;border:2px solid var(--line);border-radius:8px;font-size:.8rem;margin-bottom:10px">
+    <div id="insectList"></div>
+    <button class="add-btn" id="addBtn">+ 새 곤충 추가</button>
+  </aside>
+  <main>
+    <h1 class="app-title">곤충 배틀 도감 · 관리자 페이지</h1>
+    <p class="app-sub">데이터를 편집한 뒤, 아래 "JSON 다운로드" 버튼으로 받은 파일을 저장소의 <b>data/insects.json</b>에 덮어쓰고 커밋 · 푸시하면 실제 사이트에 반영돼요.</p>
+    <div class="notice">
+      📌 <b>사용법</b> — ① 왼쪽에서 곤충을 고르거나 새로 추가 ② 내용/사진 수정 ③ 사진을 골랐다면 <b>"사진 다운로드"</b>로 받아서 리포지토리의 <code>images/</code> 폴더에 넣기 ④ 다 고치면 아래 <b>"JSON 다운로드"</b>로 받아서 <code>data/insects.json</code> 파일을 통째로 교체 ⑤ GitHub에 커밋 · 푸시
+    </div>
+
+    <div id="formArea"></div>
+
+    <div class="save-bar">
+      <button class="btn btn-leaf" id="downloadJsonBtn">⬇️ JSON 다운로드 (전체 데이터)</button>
+      <span id="status"></span>
+    </div>
+  </main>
+</div>
+
+<script>
+const ORDER_OPTIONS = {
+  coleoptera:"딱정벌레목", lepidoptera:"나비목", hymenoptera:"벌목", odonata:"잠자리목",
+  orthoptera:"메뚜기목", hemiptera:"매미노린재목", diptera:"파리목", mantodea:"사마귀목", blattodea:"바퀴목"
+};
+const SHAPE_OPTIONS = ["beetle","butterfly","bee","dragonfly","hopper","truebug","fly","mantis","roach"];
+const HAB_OPTIONS = ["숲","나무위","풀숲","물가","습지","도심","땅"];
+const TIME_OPTIONS = ["낮","밤","새벽","무관"];
+const WEATHER_OPTIONS = ["없음","맑음","비","바람","무더위","흐림"];
+
+let fullData = null;      // 원본 json 전체 ( _readme, _template 포함 )
+let insects = [];         // 편집 대상 배열
+let selectedId = null;
+let pendingPhotoFile = null; // 현재 선택 항목에 방금 업로드한 사진 파일(다운로드용)
+let searchTerm = "";
+
+async function boot(){
+  try{
+    const res = await fetch("data/insects.json");
+    fullData = await res.json();
+    insects = fullData.insects.filter(i=>i && i.id);
+  }catch(e){
+    fullData = { _readme:"", insects: [] };
+    insects = [];
+    document.getElementById("status").textContent = "⚠️ data/insects.json을 불러오지 못했어요. (로컬 서버로 열어보세요)";
+  }
+  if (insects.length) selectedId = insects[0].id;
+  renderList();
+  renderForm();
+}
+
+function renderList(){
+  const box = document.getElementById("insectList");
+  const list = insects.filter(i=>i.name.includes(searchTerm));
+  box.innerHTML = list.map(i=>`
+    <button class="list-item ${i.id===selectedId?'active':''}" data-select="${i.id}">
+      <span>${i.name || "(이름 없음)"}</span>
+      <span class="tag">${ORDER_OPTIONS[i.order]||""}</span>
+    </button>`).join("") || `<p style="font-size:.8rem;color:var(--ink-soft)">곤충이 없어요</p>`;
+  box.querySelectorAll("[data-select]").forEach(b=>{
+    b.addEventListener("click", ()=>{ selectedId = b.getAttribute("data-select"); pendingPhotoFile=null; renderList(); renderForm(); });
+  });
+}
+
+function blankInsect(){
+  const id = "new_" + Math.random().toString(36).slice(2,8);
+  return { id, name:"", order:"coleoptera", shape:"beetle", photoUrl:null, hab:["숲"], time:"낮",
+    stats:{hp:50,atk:50,def:50,spd:50}, features:"", attack:"",
+    skills:[{name:"",power:20,desc:""},{name:"",power:20,desc:""},{name:"",power:20,desc:""}] };
+}
+
+function renderForm(){
+  const area = document.getElementById("formArea");
+  const insect = insects.find(i=>i.id===selectedId);
+  if (!insect){ area.innerHTML = `<p style="color:var(--ink-soft)">왼쪽에서 곤충을 선택하거나 새로 추가하세요.</p>`; return; }
+
+  const habChecks = HAB_OPTIONS.map(h=>`
+    <label><input type="checkbox" data-hab="${h}" ${insect.hab.includes(h)?"checked":""}> ${h}</label>`).join("");
+
+  area.innerHTML = `
+    <fieldset>
+      <legend>기본 정보</legend>
+      <div class="row2">
+        <div class="field"><label>이름</label><input type="text" id="f-name" value="${escAttr(insect.name)}"></div>
+        <div class="field"><label>고유 id (영문)</label><input type="text" id="f-id" value="${escAttr(insect.id)}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>분류(목)</label>
+          <select id="f-order">${Object.entries(ORDER_OPTIONS).map(([k,v])=>`<option value="${k}" ${insect.order===k?"selected":""}>${v}</option>`).join("")}</select>
+        </div>
+        <div class="field"><label>기본 그림 모양 (사진 없을 때)</label>
+          <select id="f-shape">${SHAPE_OPTIONS.map(s=>`<option value="${s}" ${insect.shape===s?"selected":""}>${s}</option>`).join("")}</select>
+        </div>
+      </div>
+      <div class="field"><label>서식지 (1개 이상)</label><div class="check-group" id="f-hab">${habChecks}</div></div>
+      <div class="row2">
+        <div class="field"><label>활동 시간대</label>
+          <select id="f-time">${TIME_OPTIONS.map(t=>`<option value="${t}" ${insect.time===t?"selected":""}>${t}</option>`).join("")}</select>
+        </div>
+        <div class="field"><label>약한 날씨 (선택)</label>
+          <select id="f-weakweather">${WEATHER_OPTIONS.map(w=>`<option value="${w}" ${((insect.weakWeather||"없음")===w)?"selected":""}>${w}</option>`).join("")}</select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>사진</legend>
+      <div class="photo-box">
+        <div class="photo-preview" id="photoPreview">${insect.photoUrl ? `<img src="${escAttr(insect.photoUrl)}">` : "🐛"}</div>
+        <div>
+          <input type="file" accept="image/*" id="f-photo">
+          <p class="small-note">사진을 고르면 아래 "사진 다운로드"로 받아서 리포지토리의 <b>images/</b> 폴더에 넣어주세요. 경로는 자동으로 <code>images/${insect.id}.jpg</code> 형태로 채워져요.</p>
+          <div class="btn-row">
+            <button class="btn btn-sky" id="downloadPhotoBtn" style="display:none">⬇️ 사진 다운로드</button>
+            <button class="btn btn-ghost" id="clearPhotoBtn">사진 없이(그림만) 사용</button>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>능력치 (0~100)</legend>
+      <div class="row4">
+        <div class="field"><label>체력</label><input type="number" id="f-hp" value="${insect.stats.hp}"></div>
+        <div class="field"><label>공격</label><input type="number" id="f-atk" value="${insect.stats.atk}"></div>
+        <div class="field"><label>방어</label><input type="number" id="f-def" value="${insect.stats.def}"></div>
+        <div class="field"><label>속도</label><input type="number" id="f-spd" value="${insect.stats.spd}"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>설명</legend>
+      <div class="field"><label>특징</label><textarea id="f-features">${escText(insect.features)}</textarea></div>
+      <div class="field"><label>공격 방법</label><textarea id="f-attack">${escText(insect.attack)}</textarea></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>기술 (3개)</legend>
+      ${[0,1,2].map(idx=>{
+        const s = insect.skills[idx] || {name:"",power:20,desc:""};
+        return `<div class="skill-row">
+          <input type="text" placeholder="기술 이름" id="f-skill-name-${idx}" value="${escAttr(s.name)}">
+          <input type="number" placeholder="위력" id="f-skill-power-${idx}" value="${s.power}">
+          <input type="text" placeholder="설명" id="f-skill-desc-${idx}" value="${escAttr(s.desc)}">
+        </div>`;
+      }).join("")}
+    </fieldset>
+
+    <div class="btn-row">
+      <button class="btn btn-leaf" id="applyBtn">✔️ 이 내용 반영하기</button>
+      <button class="btn btn-danger" id="deleteBtn">이 곤충 삭제</button>
+    </div>
+  `;
+
+  document.getElementById("f-photo").addEventListener("change", (e)=>{
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingPhotoFile = file;
+    const url = URL.createObjectURL(file);
+    document.getElementById("photoPreview").innerHTML = `<img src="${url}">`;
+    document.getElementById("downloadPhotoBtn").style.display = "inline-flex";
+    const ext = (file.name.split(".").pop()||"jpg").toLowerCase();
+    insect.photoUrl = `images/${insect.id}.${ext}`;
+  });
+  document.getElementById("downloadPhotoBtn").addEventListener("click", ()=>{
+    if (!pendingPhotoFile) return;
+    const ext = (pendingPhotoFile.name.split(".").pop()||"jpg").toLowerCase();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(pendingPhotoFile);
+    a.download = `${insect.id}.${ext}`;
+    a.click();
+  });
+  document.getElementById("clearPhotoBtn").addEventListener("click", ()=>{
+    insect.photoUrl = null; pendingPhotoFile = null;
+    document.getElementById("photoPreview").innerHTML = "🐛";
+    document.getElementById("downloadPhotoBtn").style.display = "none";
+  });
+
+  document.getElementById("applyBtn").addEventListener("click", ()=>{
+    const newId = document.getElementById("f-id").value.trim();
+    insect.name = document.getElementById("f-name").value.trim();
+    insect.id = newId || insect.id;
+    insect.order = document.getElementById("f-order").value;
+    insect.shape = document.getElementById("f-shape").value;
+    insect.hab = HAB_OPTIONS.filter(h=> document.querySelector(`[data-hab="${h}"]`).checked);
+    if (insect.hab.length === 0) insect.hab = ["숲"];
+    insect.time = document.getElementById("f-time").value;
+    const ww = document.getElementById("f-weakweather").value;
+    if (ww === "없음") delete insect.weakWeather; else insect.weakWeather = ww;
+    insect.stats = {
+      hp:Number(document.getElementById("f-hp").value)||0,
+      atk:Number(document.getElementById("f-atk").value)||0,
+      def:Number(document.getElementById("f-def").value)||0,
+      spd:Number(document.getElementById("f-spd").value)||0,
+    };
+    insect.features = document.getElementById("f-features").value;
+    insect.attack = document.getElementById("f-attack").value;
+    insect.skills = [0,1,2].map(idx=>({
+      name: document.getElementById(`f-skill-name-${idx}`).value,
+      power: Number(document.getElementById(`f-skill-power-${idx}`).value)||0,
+      desc: document.getElementById(`f-skill-desc-${idx}`).value,
+    }));
+    selectedId = insect.id;
+    document.getElementById("status").textContent = "✔️ 반영됨 (메모리상). 완료되면 JSON 다운로드를 눌러주세요.";
+    renderList(); renderForm();
+  });
+
+  document.getElementById("deleteBtn").addEventListener("click", ()=>{
+    if (!confirm(`'${insect.name}'을(를) 목록에서 삭제할까요?`)) return;
+    insects = insects.filter(i=>i.id!==insect.id);
+    selectedId = insects.length? insects[0].id : null;
+    renderList(); renderForm();
+  });
+}
+
+document.getElementById("searchList").addEventListener("input", (e)=>{ searchTerm = e.target.value; renderList(); });
+document.getElementById("addBtn").addEventListener("click", ()=>{
+  const b = blankInsect();
+  insects.push(b);
+  selectedId = b.id;
+  pendingPhotoFile = null;
+  renderList(); renderForm();
+});
+document.getElementById("downloadJsonBtn").addEventListener("click", ()=>{
+  const output = Object.assign({}, fullData, { insects });
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "insects.json";
+  a.click();
+  document.getElementById("status").textContent = "⬇️ insects.json 다운로드 완료! data/insects.json에 덮어써 주세요.";
+});
+
+function escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+function escText(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+boot();
+</script>
+</body>
+</html>

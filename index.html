@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>곤충 배틀 도감</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap');
+
+  :root{
+    --cream:#FFF8EA;
+    --card:#FFFFFF;
+    --ink:#3A2E1F;
+    --ink-soft:#8A7A5E;
+    --leaf:#3FA34D;
+    --leaf-dark:#2C7A39;
+    --sun:#FFC83D;
+    --sun-dark:#E0A800;
+    --coral:#FF6F59;
+    --coral-dark:#E0503C;
+    --sky:#4FC1E0;
+    --sky-dark:#2E9FBD;
+    --line:#FFE3B8;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:'Gowun Dodum', sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3, .display{ font-family:'Jua', sans-serif; font-weight:400; }
+  @media (prefers-reduced-motion: reduce){ *,*::before,*::after{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:10px; }
+
+  .wrap{ max-width:920px; margin:0 auto; padding:0 16px; }
+
+  /* ---------- header ---------- */
+  header{ position:sticky; top:0; z-index:20; background:var(--cream); padding-top:14px; padding-bottom:10px; border-bottom:3px solid var(--line); }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-badge{ width:52px; height:52px; border-radius:50%; background:var(--leaf); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 0 var(--leaf-dark); flex-shrink:0; }
+  .brand h1{ font-size:1.5rem; margin:0; color:var(--leaf-dark); line-height:1.1; }
+  .brand p{ margin:2px 0 0; font-size:.75rem; color:var(--ink-soft); }
+  .tabs{ display:flex; gap:10px; margin-top:12px; }
+  .tab-btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 14px; border-radius:999px; border:none; font-family:'Jua',sans-serif; font-size:1rem; cursor:pointer; background:var(--card); color:var(--ink); box-shadow:0 4px 0 var(--line); transition:transform .1s; }
+  .tab-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--line); }
+  .tab-btn.active.dex{ background:var(--leaf); color:#fff; box-shadow:0 4px 0 var(--leaf-dark); }
+  .tab-btn.active.battle{ background:var(--coral); color:#fff; box-shadow:0 4px 0 var(--coral-dark); }
+
+  /* ---------- buttons (chunky pop style) ---------- */
+  .btn{ font-family:'Jua',sans-serif; border:none; border-radius:999px; cursor:pointer; padding:12px 22px; font-size:1rem; color:#fff; transition:transform .08s; display:inline-flex; align-items:center; gap:8px; justify-content:center; }
+  .btn:active{ transform:translateY(3px); }
+  .btn-leaf{ background:var(--leaf); box-shadow:0 5px 0 var(--leaf-dark); }
+  .btn-leaf:active{ box-shadow:0 1px 0 var(--leaf-dark); }
+  .btn-coral{ background:var(--coral); box-shadow:0 5px 0 var(--coral-dark); }
+  .btn-coral:active{ box-shadow:0 1px 0 var(--coral-dark); }
+  .btn-sky{ background:var(--sky); box-shadow:0 5px 0 var(--sky-dark); }
+  .btn-sky:active{ box-shadow:0 1px 0 var(--sky-dark); }
+  .btn-ghost{ background:var(--card); color:var(--ink); box-shadow:0 4px 0 var(--line); }
+  .btn-ghost:active{ box-shadow:0 1px 0 var(--line); }
+  .btn:disabled{ opacity:.5; cursor:default; }
+
+  /* ---------- search / filter ---------- */
+  .search-bar{ display:flex; align-items:center; gap:8px; background:var(--card); border:3px solid var(--line); border-radius:999px; padding:10px 16px; margin:14px 0 10px; }
+  .search-bar input{ border:none; outline:none; background:transparent; flex:1; font-family:'Gowun Dodum',sans-serif; font-size:.95rem; color:var(--ink); }
+  .chip-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; scrollbar-width:none; }
+  .chip-row::-webkit-scrollbar{ display:none; }
+  .chip{ flex-shrink:0; font-family:'Jua',sans-serif; font-size:.8rem; padding:8px 14px; border-radius:999px; border:none; cursor:pointer; color:#fff; opacity:.55; transition:opacity .15s, transform .1s; }
+  .chip.active{ opacity:1; transform:scale(1.05); }
+
+  /* ---------- specimen card ---------- */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:14px; padding-bottom:20px; }
+  .bug-card{ background:var(--card); border-radius:22px; padding:12px; text-align:left; border:3px solid var(--line); cursor:pointer; transition:transform .15s, box-shadow .15s; box-shadow:0 4px 0 var(--line); }
+  .bug-card:hover{ transform:translateY(-4px) rotate(-1deg); }
+  .bug-card .avatar{ width:100%; aspect-ratio:1; border-radius:18px; background:var(--cream); display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:8px; }
+  .bug-card .avatar img{ width:100%; height:100%; object-fit:cover; }
+  .bug-card .order-tag{ font-size:.62rem; font-family:'Jua',sans-serif; letter-spacing:.03em; }
+  .bug-card .name{ font-family:'Jua',sans-serif; font-size:1.05rem; margin:2px 0 6px; }
+  .bug-card .hab-tags{ display:flex; gap:4px; flex-wrap:wrap; }
+  .tag-pill{ font-size:.65rem; background:var(--cream); padding:2px 7px; border-radius:999px; color:var(--ink-soft); }
+
+  .empty-msg{ text-align:center; color:var(--ink-soft); padding:40px 0; }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(58,46,31,.5); display:flex; align-items:flex-end; justify-content:center; z-index:40; }
+  @media (min-width:640px){ .modal-overlay{ align-items:center; padding:16px; } }
+  .modal-card{ background:var(--card); width:100%; max-width:520px; max-height:88vh; overflow-y:auto; border-radius:28px 28px 0 0; padding:22px; position:relative; }
+  @media (min-width:640px){ .modal-card{ border-radius:28px; } }
+  .modal-close{ position:absolute; top:16px; right:16px; width:34px; height:34px; border-radius:50%; background:var(--cream); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.1rem; }
+  .modal-breadcrumb{ font-family:'Jua',sans-serif; font-size:.7rem; letter-spacing:.02em; }
+  .modal-head{ display:flex; align-items:center; gap:14px; margin-top:10px; }
+  .modal-avatar{ width:84px; height:84px; border-radius:50%; background:var(--cream); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
+  .modal-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .modal-head h2{ font-size:1.6rem; margin:0; }
+  .stat-row{ display:flex; align-items:center; gap:8px; font-size:.75rem; margin:5px 0; }
+  .stat-row .label{ width:34px; font-family:'Jua',sans-serif; flex-shrink:0; }
+  .stat-track{ flex:1; height:12px; border-radius:999px; background:var(--line); overflow:hidden; }
+  .stat-fill{ height:100%; border-radius:999px; }
+  .stat-num{ width:26px; text-align:right; font-family:'Jua',sans-serif; }
+  .section-box{ margin-top:14px; }
+  .section-box .head{ font-family:'Jua',sans-serif; font-size:.85rem; margin-bottom:4px; }
+  .section-box p{ font-size:.92rem; line-height:1.6; margin:0; }
+  .skill-item{ background:var(--cream); border-radius:16px; padding:10px 12px; display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .skill-power{ font-family:'Jua',sans-serif; background:#fff; color:var(--coral-dark); font-size:.75rem; padding:4px 9px; border-radius:10px; flex-shrink:0; }
+  .skill-item .sname{ font-family:'Jua',sans-serif; font-size:.95rem; }
+  .skill-item .sdesc{ font-size:.78rem; color:var(--ink-soft); margin-top:1px; }
+
+  /* ---------- battle ---------- */
+  .step-label{ font-family:'Jua',sans-serif; font-size:1rem; color:var(--leaf-dark); margin:16px 0 10px; }
+  .env-card{ background:var(--card); border:3px dashed var(--line); border-radius:22px; padding:16px; text-align:center; }
+  .env-card .ename{ font-family:'Jua',sans-serif; font-size:1.1rem; color:var(--leaf-dark); }
+  .env-card .emeta{ display:flex; justify-content:center; gap:14px; font-size:.85rem; color:var(--ink-soft); margin-top:6px; }
+  .vs-row{ display:flex; justify-content:center; gap:28px; margin-bottom:16px; }
+  .vs-item{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .vs-avatar{ width:74px; height:74px; border-radius:50%; background:var(--card); border:3px dashed var(--line); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .vs-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .vs-item .vname{ font-family:'Jua',sans-serif; font-size:.85rem; }
+  .action-row{ display:flex; gap:10px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
+
+  .hp-panel{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .hp-card{ background:var(--card); border-radius:20px; padding:12px; border:3px solid var(--line); }
+  .hp-card .who{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .hp-card .who .name{ font-family:'Jua',sans-serif; font-size:.9rem; }
+  .hp-track{ height:14px; border-radius:999px; background:var(--line); overflow:hidden; }
+  .hp-fill{ height:100%; border-radius:999px; transition:width .35s; }
+  .hp-num{ font-size:.7rem; color:var(--ink-soft); margin-top:3px; }
+
+  .battle-log{ background:#fff; border:3px solid var(--line); border-radius:18px; padding:12px 14px; height:150px; overflow-y:auto; font-size:.82rem; margin-bottom:12px; }
+  .battle-log p{ margin:3px 0; }
+
+  .skill-btn{ width:100%; text-align:left; background:var(--card); border:3px solid var(--line); border-radius:18px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; margin-bottom:9px; transition:transform .08s; font-family:'Gowun Dodum',sans-serif; }
+  .skill-btn:active{ transform:scale(.98); }
+  .skill-btn:disabled{ opacity:.5; }
+  .skill-btn .sname{ font-family:'Jua',sans-serif; font-size:.95rem; }
+  .skill-btn .sdesc{ font-size:.75rem; color:var(--ink-soft); }
+  .skill-btn .spower{ font-family:'Jua',sans-serif; background:var(--cream); color:var(--coral-dark); padding:5px 10px; border-radius:10px; flex-shrink:0; }
+
+  .result-banner{ text-align:center; margin:20px 0; }
+  .result-banner .big{ font-family:'Jua',sans-serif; font-size:1.4rem; color:var(--leaf-dark); }
+
+  .load-error{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  footer{ text-align:center; padding:26px 0; font-size:.7rem; color:#c2b190; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================== 데이터/상수 ============================== */
+const ORDER_INFO = {
+  coleoptera:  { name:"딱정벌레목",   color:"#C17A3D" },
+  lepidoptera: { name:"나비목",       color:"#E8639A" },
+  hymenoptera: { name:"벌목",         color:"#FFB100" },
+  odonata:     { name:"잠자리목",     color:"#2FB6C9" },
+  orthoptera:  { name:"메뚜기목",     color:"#5FB44D" },
+  hemiptera:   { name:"매미노린재목", color:"#C9A227" },
+  diptera:     { name:"파리목",       color:"#7B7FA6" },
+  mantodea:    { name:"사마귀목",     color:"#28A06A" },
+  blattodea:   { name:"바퀴목",       color:"#A6543F" },
+};
+const HAB_ICON = { 숲:"🌲", 나무위:"🌳", 풀숲:"🌾", 물가:"💧", 습지:"🪷", 도심:"🏙️", 땅:"🕳️" };
+const TIME_ICON = { 낮:"☀️", 밤:"🌙", 새벽:"🌅", 무관:"🌗" };
+const WEATHER_ICON = { 맑음:"🌤️", 비:"🌧️", 바람:"💨", 무더위:"🥵", 흐림:"☁️" };
+
+const ENV_CARDS = [
+  { id:"e1", name:"이슬 맺힌 숲속 새벽",     hab:"숲",   time:"새벽", weather:"맑음" },
+  { id:"e2", name:"뜨겁게 내리쬐는 한낮 풀숲", hab:"풀숲", time:"낮",   weather:"무더위" },
+  { id:"e3", name:"비 내리는 밤의 습지",       hab:"습지", time:"밤",   weather:"비" },
+  { id:"e4", name:"바람 부는 나무 위 오후",   hab:"나무위",time:"낮",  weather:"바람" },
+  { id:"e5", name:"고요한 밤의 물가",         hab:"물가", time:"밤",   weather:"맑음" },
+  { id:"e6", name:"흐린 낮의 도심 골목",      hab:"도심", time:"낮",   weather:"흐림" },
+  { id:"e7", name:"서늘한 아침의 땅속 굴",    hab:"땅",   time:"아침", weather:"흐림" },
+  { id:"e8", name:"무더운 여름밤 숲",         hab:"숲",   time:"밤",   weather:"무더위" },
+];
+
+/* 오프라인/파일더블클릭 테스트용 미니 샘플 (fetch 실패시에만 사용) */
+const FALLBACK_SAMPLE = [
+  { id:"beetle1", name:"장수풍뎅이", order:"coleoptera", shape:"beetle", photoUrl:null, hab:["숲","나무위"], time:"밤",
+    stats:{hp:90,atk:85,def:70,spd:40},
+    features:"머리에 커다란 뿔이 달려 있고 몸 전체가 두꺼운 갑옷 같은 껍질로 덮여 있어요.",
+    attack:"뿔을 지렛대처럼 밀어 넣은 뒤 통째로 들어 올려 뒤집어 버려요.",
+    skills:[{name:"뿔 들이받기",power:34,desc:"뿔로 정면에서 세게 들이받는다."},{name:"뒤집어 던지기",power:44,desc:"상대를 뿔로 걸어 올려 내동댕이친다."},{name:"몸통 밀어붙이기",power:26,desc:"단단한 몸으로 밀어붙인다."}]},
+  { id:"mantis1", name:"사마귀", order:"mantodea", shape:"mantis", photoUrl:null, hab:["풀숲","숲","나무위"], time:"낮",
+    stats:{hp:65,atk:75,def:40,spd:55},
+    features:"낫처럼 생긴 앞다리로 유명한 곤충계의 사냥꾼이에요.",
+    attack:"몸을 숨긴 채 기다리다가 낫 같은 앞다리로 순식간에 낚아채요.",
+    skills:[{name:"낫다리 베기",power:40,desc:"날카로운 앞다리로 순식간에 벤다."},{name:"위장 후 기습",power:30,desc:"숨었다가 기습한다."},{name:"고개 돌려 정밀 조준",power:26,desc:"빈틈을 노린다."}]},
+  { id:"dragon1", name:"왕잠자리", order:"odonata", shape:"dragonfly", photoUrl:null, hab:["물가","습지"], time:"낮", weakWeather:"바람",
+    stats:{hp:60,atk:65,def:40,spd:90},
+    features:"거의 모든 방향으로 나는 곤충계 최고의 사냥꾼 중 하나예요.",
+    attack:"압도적인 속도로 접근해 여섯 다리로 먹이를 낚아채요.",
+    skills:[{name:"급강하 낚아채기",power:36,desc:"빠르게 내리꽂는다."},{name:"초고속 회피비행",power:24,desc:"믿기 힘든 속도로 피한다."},{name:"큰턱으로 씹기",power:30,desc:"낚아챈 상대를 문다."}]},
+  { id:"bee1", name:"꿀벌", order:"hymenoptera", shape:"bee", photoUrl:null, hab:["풀숲","도심"], time:"낮",
+    stats:{hp:45,atk:55,def:35,spd:65},
+    features:"꽃가루를 옮겨 식물 번식을 돕는 고마운 곤충이에요.",
+    attack:"필살의 독침으로 단 한 번 있는 힘껏 쏘아요.",
+    skills:[{name:"필살의 독침",power:48,desc:"온 힘을 다해 침을 쏜다.", selfDamage:10},{name:"경보 페로몬",power:20,desc:"위험을 알린다."},{name:"재빠르게 날기",power:18,desc:"윙윙 접근한다."}]},
+];
+
+let INSECTS = [];
+let dataSource = "loading";
+
+/* ============================== 표본 글리프 (SVG 문자열) ============================== */
+function glyphSVG(shape, color, size){
+  const p = `width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"`;
+  switch(shape){
+    case "beetle": return `<svg ${p}><ellipse cx="50" cy="56" rx="26" ry="32"/><line x1="50" y1="26" x2="50" y2="86"/><circle cx="50" cy="20" r="8" fill="${color}" stroke="none"/><line x1="43" y1="14" x2="34" y2="5"/><line x1="57" y1="14" x2="66" y2="5"/></svg>`;
+    case "butterfly": return `<svg ${p}><ellipse cx="30" cy="38" rx="20" ry="26" transform="rotate(-15 30 38)"/><ellipse cx="70" cy="38" rx="20" ry="26" transform="rotate(15 70 38)"/><ellipse cx="34" cy="70" rx="13" ry="17" transform="rotate(-10 34 70)"/><ellipse cx="66" cy="70" rx="13" ry="17" transform="rotate(10 66 70)"/><line x1="50" y1="18" x2="50" y2="86" stroke-width="4"/><line x1="50" y1="20" x2="42" y2="8"/><line x1="50" y1="20" x2="58" y2="8"/></svg>`;
+    case "bee": return `<svg ${p}><circle cx="50" cy="24" r="10"/><ellipse cx="50" cy="58" rx="20" ry="28"/><line x1="34" y1="48" x2="66" y2="48"/><line x1="32" y1="60" x2="68" y2="60"/><ellipse cx="28" cy="42" rx="14" ry="9" transform="rotate(-25 28 42)"/><ellipse cx="72" cy="42" rx="14" ry="9" transform="rotate(25 72 42)"/></svg>`;
+    case "dragonfly": return `<svg ${p}><line x1="50" y1="10" x2="50" y2="92" stroke-width="5"/><circle cx="50" cy="14" r="7" fill="${color}" stroke="none"/><ellipse cx="24" cy="34" rx="26" ry="7" transform="rotate(-8 24 34)"/><ellipse cx="76" cy="34" rx="26" ry="7" transform="rotate(8 76 34)"/><ellipse cx="20" cy="52" rx="24" ry="6" transform="rotate(-4 20 52)"/><ellipse cx="80" cy="52" rx="24" ry="6" transform="rotate(4 80 52)"/></svg>`;
+    case "hopper": return `<svg ${p}><ellipse cx="42" cy="46" rx="24" ry="16" transform="rotate(-10 42 46)"/><circle cx="20" cy="38" r="8"/><path d="M60 52 L90 60 L86 74 L58 62 Z" fill="${color}" stroke="none"/><line x1="90" y1="60" x2="98" y2="50"/></svg>`;
+    case "truebug": return `<svg ${p}><path d="M50 12 L80 34 L74 82 L26 82 L20 34 Z"/><line x1="50" y1="12" x2="50" y2="82"/><line x1="50" y1="34" x2="30" y2="30"/><line x1="50" y1="34" x2="70" y2="30"/></svg>`;
+    case "fly": return `<svg ${p}><ellipse cx="50" cy="30" rx="10" ry="9"/><ellipse cx="50" cy="60" rx="16" ry="22"/><ellipse cx="24" cy="50" rx="20" ry="10" transform="rotate(-18 24 50)"/><ellipse cx="76" cy="50" rx="20" ry="10" transform="rotate(18 76 50)"/></svg>`;
+    case "mantis": return `<svg ${p}><path d="M50 8 L58 20 L42 20 Z" fill="${color}" stroke="none"/><line x1="50" y1="20" x2="50" y2="90" stroke-width="5"/><path d="M50 34 L20 20 L14 32 L44 46 Z"/><path d="M50 34 L80 20 L86 32 L56 46 Z"/><line x1="50" y1="60" x2="30" y2="72"/><line x1="50" y1="60" x2="70" y2="72"/></svg>`;
+    case "roach": return `<svg ${p}><ellipse cx="50" cy="52" rx="30" ry="38"/><circle cx="50" cy="18" r="7" fill="${color}" stroke="none"/><line x1="50" y1="20" x2="50" y2="86"/><line x1="24" y1="34" x2="10" y2="24"/><line x1="76" y1="34" x2="90" y2="24"/></svg>`;
+    default: return `<svg ${p}><circle cx="50" cy="50" r="30"/></svg>`;
+  }
+}
+function avatarHTML(insect, size){
+  const info = ORDER_INFO[insect.order];
+  if (insect.photoUrl){
+    return `<img src="${insect.photoUrl}" alt="${esc(insect.name)}" data-fallback-shape="${insect.shape}" data-fallback-color="${info.color}" data-fallback-size="${size}">`;
+  }
+  return glyphSVG(insect.shape, info.color, size);
+}
+/* 사진 로드 실패 시 SVG 그림으로 자동 대체 (error 이벤트는 버블링되지 않으므로 캡처 단계에서 위임 처리) */
+document.addEventListener("error", (e)=>{
+  const img = e.target;
+  if (img.tagName === "IMG" && img.hasAttribute("data-fallback-shape")){
+    const shape = img.getAttribute("data-fallback-shape");
+    const color = img.getAttribute("data-fallback-color");
+    const size = img.getAttribute("data-fallback-size");
+    if (img.parentElement) img.parentElement.innerHTML = glyphSVG(shape, color, size);
+  }
+}, true);
+
+/* ============================== 배틀 로직 ============================== */
+function envModifiers(insect, env){
+  let atkMult=1, defMult=1, spdMult=1; const notes=[];
+  if (insect.hab.includes(env.hab)){ atkMult*=1.2; defMult*=1.15; notes.push(`${HAB_ICON[env.hab]} 익숙한 환경이라 공격력과 방어력이 올랐다!`); }
+  if (insect.time === env.time){ spdMult*=1.25; notes.push(`${TIME_ICON[env.time]} ${env.time} 시간대라 속도가 빨라졌다!`); }
+  if (insect.weakWeather && insect.weakWeather === env.weather){ atkMult*=0.85; defMult*=0.85; spdMult*=0.85; notes.push(`${WEATHER_ICON[env.weather]} ${env.weather} 날씨에 약해져 힘이 빠졌다...`); }
+  return { atkMult, defMult, spdMult, notes };
+}
+function calcDamage(attacker, defender, skill, atkMult, defMult){
+  const base = skill.power + attacker.stats.atk*0.4;
+  const defVal = defender.stats.def*defMult*0.35;
+  let raw = Math.max(4, base-defVal);
+  raw *= atkMult;
+  raw *= 0.9 + Math.random()*0.2;
+  return Math.round(raw);
+}
+
+/* ============================== 상태 ============================== */
+let state = {
+  tab: "dex",
+  dex: { query:"", orderFilter:"all", detailId:null },
+  battle: { phase:"pick-player", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, log:[], winner:null, busy:false, pickTarget:"player", pickOrderFilter:"all" }
+};
+
+/* ============================== 렌더 ============================== */
+const app = document.getElementById("app");
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function chipRow(activeKey, includeAll, onSelectAttr){
+  let html = `<div class="chip-row">`;
+  if (includeAll){
+    html += `<button class="chip ${activeKey==='all'?'active':''}" style="background:#8A7A5E" data-${onSelectAttr}="all">전체</button>`;
+  }
+  Object.entries(ORDER_INFO).forEach(([key,info])=>{
+    html += `<button class="chip ${activeKey===key?'active':''}" style="background:${info.color}" data-${onSelectAttr}="${key}">${info.name}</button>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function bugCard(insect){
+  const info = ORDER_INFO[insect.order];
+  const habTags = insect.hab.map(h=>`<span class="tag-pill">${HAB_ICON[h]} ${h}</span>`).join("");
+  return `
+    <button class="bug-card" data-open-detail="${insect.id}">
+      <div class="avatar">${avatarHTML(insect, 64)}</div>
+      <p class="order-tag" style="color:${info.color}">${info.name}</p>
+      <p class="name">${esc(insect.name)}</p>
+      <div class="hab-tags">${habTags}</div>
+    </button>`;
+}
+
+function renderHeader(){
+  return `
+    <header>
+      <div class="wrap">
+        <div class="brand">
+          <div class="brand-badge">${glyphSVG("beetle","#FFF8EA",30)}</div>
+          <div>
+            <h1>곤충 배틀 도감</h1>
+            <p>나만의 곤충 표본을 모으고, 대결도 해보자!</p>
+          </div>
+        </div>
+        <div class="tabs">
+          <button class="tab-btn dex ${state.tab==='dex'?'active':''}" data-set-tab="dex">📖 도감</button>
+          <button class="tab-btn battle ${state.tab==='battle'?'active':''}" data-set-tab="battle">⚔️ 대결</button>
+        </div>
+      </div>
+    </header>`;
+}
+
+function filteredInsects(query, orderFilter, excludeId){
+  return INSECTS.filter(i=>{
+    const okOrder = orderFilter==="all" || i.order===orderFilter;
+    const okQuery = i.name.includes(query);
+    const okExclude = !excludeId || i.id !== excludeId;
+    return okOrder && okQuery && okExclude;
+  });
+}
+
+function renderDex(){
+  const list = filteredInsects(state.dex.query, state.dex.orderFilter, null);
+  return `
+    <div class="wrap">
+      <div class="search-bar">
+        🔍 <input id="dexSearch" placeholder="곤충 이름으로 찾기" value="${esc(state.dex.query)}">
+      </div>
+      ${chipRow(state.dex.orderFilter, true, "dex-order")}
+      <p style="font-size:.75rem;color:var(--ink-soft);margin:2px 0 10px;">${list.length}종의 표본이 있어요</p>
+      <div class="grid" id="dexGrid">
+        ${list.length ? list.map(bugCard).join("") : `<div class="empty-msg" style="grid-column:1/-1">일치하는 곤충이 없어요 🐛</div>`}
+      </div>
+    </div>
+    <div id="detailSlot"></div>`;
+}
+
+function renderDetailModal(insect){
+  if (!insect) return "";
+  const info = ORDER_INFO[insect.order];
+  const statRow = (label, value, color) => `
+    <div class="stat-row"><span class="label">${label}</span>
+      <div class="stat-track"><div class="stat-fill" style="width:${value}%;background:${color}"></div></div>
+      <span class="stat-num">${value}</span>
+    </div>`;
+  const skills = insect.skills.map(s=>`
+    <div class="skill-item">
+      <span class="skill-power">${s.power}</span>
+      <div><div class="sname">${esc(s.name)}</div><div class="sdesc">${esc(s.desc)}</div></div>
+    </div>`).join("");
+  const habTags = insect.hab.map(h=>`<span class="tag-pill">${HAB_ICON[h]} ${h}</span>`).join("");
+
+  return `
+    <div class="modal-overlay" data-close-detail="1">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <button class="modal-close" data-close-detail="1">✕</button>
+        <p class="modal-breadcrumb" style="color:${info.color}">곤충강 › ${info.name} › ${esc(insect.name)}</p>
+        <div class="modal-head">
+          <div class="modal-avatar">${avatarHTML(insect, 60)}</div>
+          <div>
+            <h2>${esc(insect.name)}</h2>
+            <div class="hab-tags" style="margin-top:4px">${habTags}<span class="tag-pill">${TIME_ICON[insect.time]} ${insect.time}</span></div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          ${statRow("체력", insect.stats.hp, "var(--leaf)")}
+          ${statRow("공격", insect.stats.atk, "var(--coral)")}
+          ${statRow("방어", insect.stats.def, "var(--sky)")}
+          ${statRow("속도", insect.stats.spd, "var(--sun)")}
+        </div>
+        <div class="section-box"><p class="head" style="color:var(--leaf-dark)">🔍 특징</p><p>${esc(insect.features)}</p></div>
+        <div class="section-box"><p class="head" style="color:var(--coral-dark)">⚔️ 공격 방법</p><p>${esc(insect.attack)}</p></div>
+        <div class="section-box"><p class="head">✨ 기술</p>${skills}</div>
+      </div>
+    </div>`;
+}
+
+function envCardHTML(env){
+  return `
+    <div class="env-card">
+      <p class="ename">${env.name}</p>
+      <div class="emeta">
+        <span>${HAB_ICON[env.hab]} ${env.hab}</span>
+        <span>${TIME_ICON[env.time]} ${env.time}</span>
+        <span>${WEATHER_ICON[env.weather]} ${env.weather}</span>
+      </div>
+    </div>`;
+}
+
+function renderBattle(){
+  const b = state.battle;
+
+  if (b.phase === "pick-player" || b.phase === "pick-enemy"){
+    const excludeId = b.phase==="pick-enemy" ? b.player.id : null;
+    const list = filteredInsects(state.dex.query, b.pickOrderFilter, excludeId);
+    return `
+      <div class="wrap">
+        <p class="step-label">${b.phase==="pick-player" ? "1️⃣ 내 곤충을 선택하세요" : "2️⃣ 상대 곤충을 선택하세요"}</p>
+        ${b.phase==="pick-enemy" ? `
+          <div class="action-row" style="margin-bottom:12px">
+            <button class="btn btn-sky" data-random-enemy="1">🎲 랜덤 상대 뽑기</button>
+            <button class="btn btn-ghost" data-back-to-pick-player="1">← 다시 선택</button>
+          </div>` : ``}
+        ${chipRow(b.pickOrderFilter, true, "pick-order")}
+        <div class="grid">
+          ${list.map(i=>`
+            <button class="bug-card" data-pick-insect="${i.id}" data-pick-role="${b.phase==='pick-player'?'player':'enemy'}">
+              <div class="avatar">${avatarHTML(i,64)}</div>
+              <p class="order-tag" style="color:${ORDER_INFO[i.order].color}">${ORDER_INFO[i.order].name}</p>
+              <p class="name">${esc(i.name)}</p>
+              <div class="hab-tags">${i.hab.map(h=>`<span class="tag-pill">${HAB_ICON[h]} ${h}</span>`).join("")}</div>
+            </button>`).join("")}
+        </div>
+      </div>`;
+  }
+
+  if (b.phase === "draw-env"){
+    return `
+      <div class="wrap" style="text-align:center">
+        <p class="step-label">3️⃣ 환경 카드를 뽑아보세요</p>
+        <div class="vs-row">
+          <div class="vs-item"><div class="vs-avatar">${avatarHTML(b.player,44)}</div><p class="vname">${esc(b.player.name)}</p></div>
+          <div class="vs-item"><div class="vs-avatar">${avatarHTML(b.enemy,44)}</div><p class="vname">${esc(b.enemy.name)}</p></div>
+        </div>
+        ${b.env ? envCardHTML(b.env) : `<div class="env-card"><p style="color:var(--ink-soft);margin:0">아직 카드를 뽑지 않았어요</p></div>`}
+        <div class="action-row">
+          <button class="btn btn-sky" data-draw-env="1" ${b.drawing?"disabled":""}>✨ ${b.drawing? "뽑는 중...": (b.env? "다시 뽑기":"환경 카드 뽑기!")}</button>
+          ${b.env && !b.drawing ? `<button class="btn btn-coral" data-start-battle="1">대결 시작 ⚔️</button>` : ``}
+        </div>
+      </div>`;
+  }
+
+  if (b.phase === "battling" || b.phase === "result"){
+    const pMods = envModifiers(b.player, b.env);
+    const eMods = envModifiers(b.enemy, b.env);
+    return `
+      <div class="wrap">
+        <div style="margin-bottom:12px">${envCardHTML(b.env)}</div>
+        <div class="hp-panel">
+          <div class="hp-card">
+            <div class="who">${avatarHTML(b.player,26)}<span class="name">${esc(b.player.name)}</span></div>
+            <div class="hp-track"><div class="hp-fill" style="width:${(b.playerHP/b.player.stats.hp)*100}%;background:var(--leaf)"></div></div>
+            <p class="hp-num">${b.playerHP} / ${b.player.stats.hp}</p>
+          </div>
+          <div class="hp-card">
+            <div class="who">${avatarHTML(b.enemy,26)}<span class="name">${esc(b.enemy.name)}</span></div>
+            <div class="hp-track"><div class="hp-fill" style="width:${(b.enemyHP/b.enemy.stats.hp)*100}%;background:var(--coral)"></div></div>
+            <p class="hp-num">${b.enemyHP} / ${b.enemy.stats.hp}</p>
+          </div>
+        </div>
+        <div class="battle-log" id="battleLog">${b.log.map(l=>`<p>${esc(l)}</p>`).join("")}</div>
+        ${b.phase==="battling" ? `
+          <div>
+            ${b.player.skills.map((s,idx)=>`
+              <button class="skill-btn" data-use-skill="${idx}" ${b.busy?"disabled":""}>
+                <div><div class="sname">${esc(s.name)}</div><div class="sdesc">${esc(s.desc)}</div></div>
+                <span class="spower">${s.power}</span>
+              </button>`).join("")}
+          </div>` : `
+          <div class="result-banner">
+            <p class="big">${b.winner==="무승부" ? "🤝 무승부!" : `🏆 ${esc(b.winner)}의 승리!`}</p>
+            <div class="action-row">
+              <button class="btn btn-leaf" data-reset-battle="1">🔄 처음부터</button>
+              <button class="btn btn-sun" style="background:var(--sun);box-shadow:0 5px 0 var(--sun-dark)" data-rematch="1">같은 곤충으로 재대결</button>
+            </div>
+          </div>`}
+      </div>`;
+  }
+  return "";
+}
+
+function render(){
+  let body = "";
+  if (dataSource === "loading"){
+    body = `<div class="load-error">🐞 곤충 데이터를 불러오는 중...</div>`;
+  } else if (dataSource === "error"){
+    body = `<div class="wrap load-error">
+      <p style="font-size:2rem;margin:0 0 10px">📭</p>
+      <p style="font-family:'Jua',sans-serif;font-size:1rem;color:var(--ink)">데이터를 불러오지 못했어요</p>
+      <p style="font-size:.85rem">이 파일을 더블클릭해서 열면 <b>data/insects.json</b>을 못 불러올 수 있어요.<br>
+      GitHub Pages에 올리거나, 로컬 서버(예: <code>python3 -m http.server</code>)로 열어보세요.</p>
+      <button class="btn btn-leaf" style="margin-top:14px" data-load-fallback="1">일단 샘플 4종으로 미리보기</button>
+    </div>`;
+  } else {
+    body = state.tab==="dex" ? renderDex() : renderBattle();
+  }
+  app.innerHTML = renderHeader() + body + `<footer>${INSECTS.length}종의 곤충 표본 · 대결은 재미를 위한 상상 시뮬레이션이에요</footer>`;
+
+  if (state.tab==="dex" && dataSource==="ready"){
+    document.getElementById("detailSlot").innerHTML = renderDetailModal(INSECTS.find(i=>i.id===state.dex.detailId));
+    const searchEl = document.getElementById("dexSearch");
+    if (searchEl){
+      searchEl.addEventListener("input", (e)=>{
+        state.dex.query = e.target.value;
+        document.getElementById("dexGrid").outerHTML = `<div class="grid" id="dexGrid">${(()=>{
+          const list = filteredInsects(state.dex.query, state.dex.orderFilter, null);
+          return list.length ? list.map(bugCard).join("") : `<div class="empty-msg" style="grid-column:1/-1">일치하는 곤충이 없어요 🐛</div>`;
+        })()}</div>`;
+      });
+    }
+  }
+  const logEl = document.getElementById("battleLog");
+  if (logEl) logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* ============================== 이벤트 처리 ============================== */
+document.addEventListener("click", (e)=>{
+  const t = (attr)=> e.target.closest(`[${attr}]`);
+
+  let el;
+  if (el = t("data-set-tab")){ state.tab = el.getAttribute("data-set-tab"); render(); return; }
+  if (el = t("data-dex-order")){ state.dex.orderFilter = el.getAttribute("data-dex-order"); render(); return; }
+  if (el = t("data-open-detail")){ state.dex.detailId = el.getAttribute("data-open-detail"); render(); return; }
+  if (el = t("data-close-detail")){ state.dex.detailId = null; render(); return; }
+
+  if (el = t("data-pick-order")){ state.battle.pickOrderFilter = el.getAttribute("data-pick-order"); render(); return; }
+  if (el = t("data-pick-insect")){
+    const id = el.getAttribute("data-pick-insect");
+    const role = el.getAttribute("data-pick-role");
+    const insect = INSECTS.find(i=>i.id===id);
+    if (role==="player"){ state.battle.player = insect; state.battle.phase="pick-enemy"; state.battle.pickOrderFilter="all"; }
+    else { state.battle.enemy = insect; state.battle.phase="draw-env"; state.battle.env=null; }
+    render(); return;
+  }
+  if (el = t("data-back-to-pick-player")){ state.battle.phase="pick-player"; state.battle.pickOrderFilter="all"; render(); return; }
+  if (el = t("data-random-enemy")){
+    const others = INSECTS.filter(i=>i.id!==state.battle.player.id);
+    state.battle.enemy = others[Math.floor(Math.random()*others.length)];
+    state.battle.phase = "draw-env"; state.battle.env = null;
+    render(); return;
+  }
+  if (el = t("data-draw-env")){ drawEnvironment(); return; }
+  if (el = t("data-start-battle")){ startBattle(); return; }
+  if (el = t("data-use-skill")){
+    const idx = Number(el.getAttribute("data-use-skill"));
+    playerAction(state.battle.player.skills[idx]);
+    return;
+  }
+  if (el = t("data-reset-battle")){
+    state.battle = { phase:"pick-player", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, log:[], winner:null, busy:false, pickTarget:"player", pickOrderFilter:"all" };
+    render(); return;
+  }
+  if (el = t("data-rematch")){ state.battle.phase="draw-env"; state.battle.env=null; render(); return; }
+  if (el = t("data-load-fallback")){ INSECTS = FALLBACK_SAMPLE; dataSource="ready"; render(); return; }
+});
+
+function drawEnvironment(){
+  state.battle.drawing = true;
+  render();
+  let count = 0;
+  const spin = setInterval(()=>{
+    state.battle.env = ENV_CARDS[Math.floor(Math.random()*ENV_CARDS.length)];
+    render();
+    count++;
+    if (count > 8){
+      clearInterval(spin);
+      state.battle.env = ENV_CARDS[Math.floor(Math.random()*ENV_CARDS.length)];
+      state.battle.drawing = false;
+      render();
+    }
+  }, 90);
+}
+
+function startBattle(){
+  const b = state.battle;
+  b.playerHP = b.player.stats.hp;
+  b.enemyHP = b.enemy.stats.hp;
+  const pMods = envModifiers(b.player, b.env);
+  const eMods = envModifiers(b.enemy, b.env);
+  const intro = [`🎬 대결 시작! ${b.player.name} VS ${b.enemy.name}`];
+  pMods.notes.forEach(n=> intro.push(`${b.player.name}: ${n}`));
+  eMods.notes.forEach(n=> intro.push(`${b.enemy.name}: ${n}`));
+  b.log = intro;
+  b.winner = null;
+  b.phase = "battling";
+  render();
+}
+
+function playerAction(skill){
+  const b = state.battle;
+  if (b.busy || b.winner) return;
+  b.busy = true;
+  const pMods = envModifiers(b.player, b.env);
+  const eMods = envModifiers(b.enemy, b.env);
+  const enemySkill = b.enemy.skills[Math.floor(Math.random()*b.enemy.skills.length)];
+
+  const pSpd = b.player.stats.spd * pMods.spdMult;
+  const eSpd = b.enemy.stats.spd * eMods.spdMult;
+  const playerFirst = pSpd >= eSpd;
+
+  const newLog = [];
+  let pHP = b.playerHP, eHP = b.enemyHP;
+
+  function doPlayerHit(){
+    const dmg = calcDamage(b.player, b.enemy, skill, pMods.atkMult, eMods.defMult);
+    eHP = Math.max(0, eHP - dmg);
+    newLog.push(`🦋 ${b.player.name}의 「${skill.name}」! ${b.enemy.name}에게 ${dmg}의 피해!`);
+    if (skill.selfDamage){ pHP = Math.max(0, pHP-skill.selfDamage); newLog.push(`   … ${b.player.name}도 ${skill.selfDamage}만큼 힘이 빠졌다.`); }
+    if (skill.heal){ pHP = Math.min(b.player.stats.hp, pHP+skill.heal); newLog.push(`   … ${b.player.name}가 체력을 ${skill.heal} 회복했다.`); }
+  }
+  function doEnemyHit(){
+    const dmg = calcDamage(b.enemy, b.player, enemySkill, eMods.atkMult, pMods.defMult);
+    pHP = Math.max(0, pHP - dmg);
+    newLog.push(`🐜 ${b.enemy.name}의 「${enemySkill.name}」! ${b.player.name}에게 ${dmg}의 피해!`);
+    if (enemySkill.selfDamage){ eHP = Math.max(0, eHP-enemySkill.selfDamage); newLog.push(`   … ${b.enemy.name}도 ${enemySkill.selfDamage}만큼 힘이 빠졌다.`); }
+    if (enemySkill.heal){ eHP = Math.min(b.enemy.stats.hp, eHP+enemySkill.heal); newLog.push(`   … ${b.enemy.name}가 체력을 ${enemySkill.heal} 회복했다.`); }
+  }
+
+  if (playerFirst){ doPlayerHit(); if (eHP>0) doEnemyHit(); }
+  else { doEnemyHit(); if (pHP>0) doPlayerHit(); }
+
+  setTimeout(()=>{
+    b.playerHP = pHP; b.enemyHP = eHP;
+    b.log = [...b.log, ...newLog];
+    if (eHP<=0 || pHP<=0){
+      const w = (eHP<=0 && pHP<=0) ? "무승부" : (eHP<=0 ? b.player.name : b.enemy.name);
+      b.winner = w;
+      b.log = [...b.log, w==="무승부" ? "🤝 무승부!" : `🏆 ${w}의 승리!`];
+      b.phase = "result";
+    }
+    b.busy = false;
+    render();
+  }, 250);
+}
+
+/* ============================== 데이터 로드 & 시작 ============================== */
+async function loadData(){
+  try{
+    const res = await fetch("data/insects.json");
+    if (!res.ok) throw new Error("bad status");
+    const json = await res.json();
+    INSECTS = json.insects.filter(i=> i && i.id && !i.id.startsWith("_"));
+    dataSource = "ready";
+  }catch(e){
+    dataSource = "error";
+  }
+  render();
+}
+render();
+loadData();
+</script>
+</body>
+</html>
