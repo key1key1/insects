@@ -120,6 +120,7 @@
   .hp-panel{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
   .hp-card{ background:var(--card); border-radius:20px; padding:12px; border:3px solid var(--line); }
   .hp-card .who{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .mini-avatar{ width:26px; height:26px; border-radius:50%; overflow:hidden; flex-shrink:0; background:var(--cream); display:flex; align-items:center; justify-content:center; }
   .hp-card .who .name{ font-family:'Jua',sans-serif; font-size:.9rem; }
   .hp-track{ height:14px; border-radius:999px; background:var(--line); overflow:hidden; }
   .hp-fill{ height:100%; border-radius:999px; transition:width .35s; }
@@ -176,22 +177,22 @@ const ENV_CARDS = [
 /* 오프라인/파일더블클릭 테스트용 미니 샘플 (fetch 실패시에만 사용) */
 const FALLBACK_SAMPLE = [
   { id:"beetle1", name:"장수풍뎅이", order:"coleoptera", shape:"beetle", photoUrl:null, hab:["숲","나무위"], time:"밤",
-    stats:{hp:90,atk:85,def:70,spd:40},
+    stats:{hp:153,atk:85,def:70,spd:40},
     features:"머리에 커다란 뿔이 달려 있고 몸 전체가 두꺼운 갑옷 같은 껍질로 덮여 있어요.",
     attack:"뿔을 지렛대처럼 밀어 넣은 뒤 통째로 들어 올려 뒤집어 버려요.",
     skills:[{name:"뿔 들이받기",power:34,desc:"뿔로 정면에서 세게 들이받는다."},{name:"뒤집어 던지기",power:44,desc:"상대를 뿔로 걸어 올려 내동댕이친다."},{name:"몸통 밀어붙이기",power:26,desc:"단단한 몸으로 밀어붙인다."}]},
   { id:"mantis1", name:"사마귀", order:"mantodea", shape:"mantis", photoUrl:null, hab:["풀숲","숲","나무위"], time:"낮",
-    stats:{hp:65,atk:75,def:40,spd:55},
+    stats:{hp:111,atk:75,def:40,spd:55},
     features:"낫처럼 생긴 앞다리로 유명한 곤충계의 사냥꾼이에요.",
     attack:"몸을 숨긴 채 기다리다가 낫 같은 앞다리로 순식간에 낚아채요.",
     skills:[{name:"낫다리 베기",power:40,desc:"날카로운 앞다리로 순식간에 벤다."},{name:"위장 후 기습",power:30,desc:"숨었다가 기습한다."},{name:"고개 돌려 정밀 조준",power:26,desc:"빈틈을 노린다."}]},
   { id:"dragon1", name:"왕잠자리", order:"odonata", shape:"dragonfly", photoUrl:null, hab:["물가","습지"], time:"낮", weakWeather:"바람",
-    stats:{hp:60,atk:65,def:40,spd:90},
+    stats:{hp:102,atk:65,def:40,spd:90},
     features:"거의 모든 방향으로 나는 곤충계 최고의 사냥꾼 중 하나예요.",
     attack:"압도적인 속도로 접근해 여섯 다리로 먹이를 낚아채요.",
     skills:[{name:"급강하 낚아채기",power:36,desc:"빠르게 내리꽂는다."},{name:"초고속 회피비행",power:24,desc:"믿기 힘든 속도로 피한다."},{name:"큰턱으로 씹기",power:30,desc:"낚아챈 상대를 문다."}]},
   { id:"bee1", name:"꿀벌", order:"hymenoptera", shape:"bee", photoUrl:null, hab:["풀숲","도심"], time:"낮",
-    stats:{hp:45,atk:55,def:35,spd:65},
+    stats:{hp:77,atk:55,def:35,spd:65},
     features:"꽃가루를 옮겨 식물 번식을 돕는 고마운 곤충이에요.",
     attack:"필살의 독침으로 단 한 번 있는 힘껏 쏘아요.",
     skills:[{name:"필살의 독침",power:48,desc:"온 힘을 다해 침을 쏜다.", selfDamage:10},{name:"경보 페로몬",power:20,desc:"위험을 알린다."},{name:"재빠르게 날기",power:18,desc:"윙윙 접근한다."}]},
@@ -219,7 +220,7 @@ function glyphSVG(shape, color, size){
 function avatarHTML(insect, size){
   const info = ORDER_INFO[insect.order];
   if (insect.photoUrl){
-    return `<img src="${insect.photoUrl}" alt="${esc(insect.name)}" data-fallback-shape="${insect.shape}" data-fallback-color="${info.color}" data-fallback-size="${size}">`;
+    return `<img src="${insect.photoUrl}" alt="${esc(insect.name)}" data-fallback-shape="${insect.shape}" data-fallback-color="${info.color}" data-fallback-size="${size}" style="width:100%;height:100%;object-fit:cover;display:block;">`;
   }
   return glyphSVG(insect.shape, info.color, size);
 }
@@ -243,9 +244,9 @@ function envModifiers(insect, env){
   return { atkMult, defMult, spdMult, notes };
 }
 function calcDamage(attacker, defender, skill, atkMult, defMult){
-  const base = skill.power + attacker.stats.atk*0.4;
-  const defVal = defender.stats.def*defMult*0.35;
-  let raw = Math.max(4, base-defVal);
+  const base = skill.power*0.75 + attacker.stats.atk*0.35;
+  const defVal = defender.stats.def*defMult*0.4;
+  let raw = Math.max(6, base-defVal);
   raw *= atkMult;
   raw *= 0.9 + Math.random()*0.2;
   return Math.round(raw);
@@ -255,13 +256,15 @@ function calcDamage(attacker, defender, skill, atkMult, defMult){
 let state = {
   tab: "dex",
   dex: { query:"", orderFilter:"all", detailId:null },
-  battle: { phase:"pick-player", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, log:[], winner:null, busy:false, pickTarget:"player", pickOrderFilter:"all" }
+  battle: { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, order:null, turnIndex:0, round:1, log:[], winner:null, busy:false, pickOrderFilter:"all" }
 };
 
 /* ============================== 렌더 ============================== */
 const app = document.getElementById("app");
 
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function closeDetail(){ state.dex.detailId = null; render(); }
 
 function chipRow(activeKey, includeAll, onSelectAttr){
   let html = `<div class="chip-row">`;
@@ -347,9 +350,9 @@ function renderDetailModal(insect){
   const habTags = insect.hab.map(h=>`<span class="tag-pill">${HAB_ICON[h]} ${h}</span>`).join("");
 
   return `
-    <div class="modal-overlay" data-close-detail="1">
+    <div class="modal-overlay" onclick="closeDetail()">
       <div class="modal-card" onclick="event.stopPropagation()">
-        <button class="modal-close" data-close-detail="1">✕</button>
+        <button class="modal-close" onclick="closeDetail()">✕</button>
         <p class="modal-breadcrumb" style="color:${info.color}">곤충강 › ${info.name} › ${esc(insect.name)}</p>
         <div class="modal-head">
           <div class="modal-avatar">${avatarHTML(insect, 60)}</div>
@@ -386,15 +389,29 @@ function envCardHTML(env){
 function renderBattle(){
   const b = state.battle;
 
+  if (b.phase === "mode-select"){
+    return `
+      <div class="wrap" style="text-align:center">
+        <p class="step-label">누구와 대결할까요?</p>
+        <div class="action-row" style="flex-direction:column;align-items:center;gap:10px">
+          <button class="btn btn-sky" data-set-mode="pvc" style="width:100%;max-width:320px">🤖 컴퓨터와 대결 (1인용)</button>
+          <button class="btn btn-coral" data-set-mode="pvp" style="width:100%;max-width:320px">🧑‍🤝‍🧑 친구와 대결 (2인용 · 같은 기기)</button>
+        </div>
+      </div>`;
+  }
+
   if (b.phase === "pick-player" || b.phase === "pick-enemy"){
     const excludeId = b.phase==="pick-enemy" ? b.player.id : null;
     const list = filteredInsects(state.dex.query, b.pickOrderFilter, excludeId);
+    let label;
+    if (b.phase === "pick-player") label = b.mode==="pvp" ? "1️⃣ 플레이어 1, 곤충을 선택하세요" : "1️⃣ 내 곤충을 선택하세요";
+    else label = b.mode==="pvp" ? "2️⃣ 플레이어 2, 곤충을 선택하세요" : "2️⃣ 상대(컴퓨터) 곤충을 선택하세요";
     return `
       <div class="wrap">
-        <p class="step-label">${b.phase==="pick-player" ? "1️⃣ 내 곤충을 선택하세요" : "2️⃣ 상대 곤충을 선택하세요"}</p>
+        <p class="step-label">${label}</p>
         ${b.phase==="pick-enemy" ? `
           <div class="action-row" style="margin-bottom:12px">
-            <button class="btn btn-sky" data-random-enemy="1">🎲 랜덤 상대 뽑기</button>
+            ${b.mode==="pvc" ? `<button class="btn btn-sky" data-random-enemy="1">🎲 랜덤 상대 뽑기</button>` : ``}
             <button class="btn btn-ghost" data-back-to-pick-player="1">← 다시 선택</button>
           </div>` : ``}
         ${chipRow(b.pickOrderFilter, true, "pick-order")}
@@ -427,32 +444,42 @@ function renderBattle(){
   }
 
   if (b.phase === "battling" || b.phase === "result"){
-    const pMods = envModifiers(b.player, b.env);
-    const eMods = envModifiers(b.enemy, b.env);
+    const side = b.order ? b.order[b.turnIndex] : "player";
+    const isHumanTurn = side === "player" || b.mode === "pvp";
+    const actor = side === "player" ? b.player : b.enemy;
+    let turnLabel = "";
+    if (b.phase === "battling"){
+      turnLabel = isHumanTurn
+        ? `🎯 ${esc(actor.name)}${b.mode==="pvp" ? (side==="player" ? " (플레이어 1)" : " (플레이어 2)") : ""}의 차례!`
+        : `🤖 ${esc(actor.name)}가 기술을 고르는 중...`;
+    }
     return `
       <div class="wrap">
         <div style="margin-bottom:12px">${envCardHTML(b.env)}</div>
         <div class="hp-panel">
           <div class="hp-card">
-            <div class="who">${avatarHTML(b.player,26)}<span class="name">${esc(b.player.name)}</span></div>
+            <div class="who"><div class="mini-avatar">${avatarHTML(b.player,26)}</div><span class="name">${esc(b.player.name)}</span></div>
             <div class="hp-track"><div class="hp-fill" style="width:${(b.playerHP/b.player.stats.hp)*100}%;background:var(--leaf)"></div></div>
             <p class="hp-num">${b.playerHP} / ${b.player.stats.hp}</p>
           </div>
           <div class="hp-card">
-            <div class="who">${avatarHTML(b.enemy,26)}<span class="name">${esc(b.enemy.name)}</span></div>
+            <div class="who"><div class="mini-avatar">${avatarHTML(b.enemy,26)}</div><span class="name">${esc(b.enemy.name)}</span></div>
             <div class="hp-track"><div class="hp-fill" style="width:${(b.enemyHP/b.enemy.stats.hp)*100}%;background:var(--coral)"></div></div>
             <p class="hp-num">${b.enemyHP} / ${b.enemy.stats.hp}</p>
           </div>
         </div>
         <div class="battle-log" id="battleLog">${b.log.map(l=>`<p>${esc(l)}</p>`).join("")}</div>
         ${b.phase==="battling" ? `
+          <p style="text-align:center;font-family:'Jua',sans-serif;color:var(--leaf-dark);margin:2px 0 10px">${turnLabel}</p>
+          ${isHumanTurn ? `
           <div>
-            ${b.player.skills.map((s,idx)=>`
-              <button class="skill-btn" data-use-skill="${idx}" ${b.busy?"disabled":""}>
+            ${actor.skills.map((s,idx)=>`
+              <button class="skill-btn" data-use-skill-side="${side}" data-use-skill-idx="${idx}" ${b.busy?"disabled":""}>
                 <div><div class="sname">${esc(s.name)}</div><div class="sdesc">${esc(s.desc)}</div></div>
                 <span class="spower">${s.power}</span>
               </button>`).join("")}
-          </div>` : `
+          </div>` : `<p style="text-align:center;color:var(--ink-soft);font-size:.85rem">잠시만 기다려주세요...</p>`}
+          ` : `
           <div class="result-banner">
             <p class="big">${b.winner==="무승부" ? "🤝 무승부!" : `🏆 ${esc(b.winner)}의 승리!`}</p>
             <div class="action-row">
@@ -480,7 +507,7 @@ function render(){
   } else {
     body = state.tab==="dex" ? renderDex() : renderBattle();
   }
-  app.innerHTML = renderHeader() + body + `<footer>${INSECTS.length}종의 곤충 표본 · 대결은 재미를 위한 상상 시뮬레이션이에요</footer>`;
+  app.innerHTML = renderHeader() + body + `<footer>${INSECTS.length}종의 곤충 표본 · 대결은 재미를 위한 상상 시뮬레이션이에요<br><a href="admin.html" style="color:#c2b190;text-decoration:underline">⚙️ 관리자</a></footer>`;
 
   if (state.tab==="dex" && dataSource==="ready"){
     document.getElementById("detailSlot").innerHTML = renderDetailModal(INSECTS.find(i=>i.id===state.dex.detailId));
@@ -507,9 +534,14 @@ document.addEventListener("click", (e)=>{
   if (el = t("data-set-tab")){ state.tab = el.getAttribute("data-set-tab"); render(); return; }
   if (el = t("data-dex-order")){ state.dex.orderFilter = el.getAttribute("data-dex-order"); render(); return; }
   if (el = t("data-open-detail")){ state.dex.detailId = el.getAttribute("data-open-detail"); render(); return; }
-  if (el = t("data-close-detail")){ state.dex.detailId = null; render(); return; }
 
   if (el = t("data-pick-order")){ state.battle.pickOrderFilter = el.getAttribute("data-pick-order"); render(); return; }
+  if (el = t("data-set-mode")){
+    state.battle.mode = el.getAttribute("data-set-mode");
+    state.battle.phase = "pick-player";
+    state.battle.pickOrderFilter = "all";
+    render(); return;
+  }
   if (el = t("data-pick-insect")){
     const id = el.getAttribute("data-pick-insect");
     const role = el.getAttribute("data-pick-role");
@@ -527,13 +559,14 @@ document.addEventListener("click", (e)=>{
   }
   if (el = t("data-draw-env")){ drawEnvironment(); return; }
   if (el = t("data-start-battle")){ startBattle(); return; }
-  if (el = t("data-use-skill")){
-    const idx = Number(el.getAttribute("data-use-skill"));
-    playerAction(state.battle.player.skills[idx]);
+  if (el = t("data-use-skill-idx")){
+    const side = el.getAttribute("data-use-skill-side");
+    const idx = Number(el.getAttribute("data-use-skill-idx"));
+    useSkill(side, idx);
     return;
   }
   if (el = t("data-reset-battle")){
-    state.battle = { phase:"pick-player", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, log:[], winner:null, busy:false, pickTarget:"player", pickOrderFilter:"all" };
+    state.battle = { mode:null, phase:"mode-select", player:null, enemy:null, env:null, drawing:false, playerHP:0, enemyHP:0, order:null, turnIndex:0, round:1, log:[], winner:null, busy:false, pickOrderFilter:"all" };
     render(); return;
   }
   if (el = t("data-rematch")){ state.battle.phase="draw-env"; state.battle.env=null; render(); return; }
@@ -563,60 +596,91 @@ function startBattle(){
   b.enemyHP = b.enemy.stats.hp;
   const pMods = envModifiers(b.player, b.env);
   const eMods = envModifiers(b.enemy, b.env);
+  const pSpd = b.player.stats.spd * pMods.spdMult;
+  const eSpd = b.enemy.stats.spd * eMods.spdMult;
+  b.order = pSpd >= eSpd ? ["player","enemy"] : ["enemy","player"];
+  b.turnIndex = 0;
+  b.round = 1;
   const intro = [`🎬 대결 시작! ${b.player.name} VS ${b.enemy.name}`];
   pMods.notes.forEach(n=> intro.push(`${b.player.name}: ${n}`));
   eMods.notes.forEach(n=> intro.push(`${b.enemy.name}: ${n}`));
   b.log = intro;
   b.winner = null;
+  b.busy = false;
   b.phase = "battling";
   render();
+  maybeAutoTurn();
 }
 
-function playerAction(skill){
+/* 컴퓨터(1인용 모드) 차례면 잠시 뒤 자동으로 기술을 골라 실행 */
+function maybeAutoTurn(){
+  const b = state.battle;
+  if (b.phase !== "battling" || b.winner) return;
+  const side = b.order[b.turnIndex];
+  if (side === "enemy" && b.mode === "pvc"){
+    b.busy = true;
+    render();
+    setTimeout(() => {
+      const idx = Math.floor(Math.random() * b.enemy.skills.length);
+      executeTurn("enemy", b.enemy.skills[idx]);
+    }, 700);
+  }
+}
+
+function useSkill(side, idx){
   const b = state.battle;
   if (b.busy || b.winner) return;
+  const actor = side === "player" ? b.player : b.enemy;
+  if (b.order[b.turnIndex] !== side) return; // 자기 차례가 아니면 무시
+  executeTurn(side, actor.skills[idx]);
+}
+
+/* 한쪽이 기술을 하나 사용하는 '한 번의 주고받기' 단위를 처리 */
+function executeTurn(side, skill){
+  const b = state.battle;
   b.busy = true;
   const pMods = envModifiers(b.player, b.env);
   const eMods = envModifiers(b.enemy, b.env);
-  const enemySkill = b.enemy.skills[Math.floor(Math.random()*b.enemy.skills.length)];
+  const attacker = side === "player" ? b.player : b.enemy;
+  const defender = side === "player" ? b.enemy : b.player;
+  const atkMult = side === "player" ? pMods.atkMult : eMods.atkMult;
+  const defMult = side === "player" ? eMods.defMult : pMods.defMult;
 
-  const pSpd = b.player.stats.spd * pMods.spdMult;
-  const eSpd = b.enemy.stats.spd * eMods.spdMult;
-  const playerFirst = pSpd >= eSpd;
+  const dmg = calcDamage(attacker, defender, skill, atkMult, defMult);
+  if (side === "player") b.enemyHP = Math.max(0, b.enemyHP - dmg);
+  else b.playerHP = Math.max(0, b.playerHP - dmg);
 
-  const newLog = [];
-  let pHP = b.playerHP, eHP = b.enemyHP;
+  const icon = side === "player" ? "🦋" : "🐜";
+  b.log = [...b.log, `${icon} ${attacker.name}의 「${skill.name}」! ${defender.name}에게 ${dmg}의 피해!`];
 
-  function doPlayerHit(){
-    const dmg = calcDamage(b.player, b.enemy, skill, pMods.atkMult, eMods.defMult);
-    eHP = Math.max(0, eHP - dmg);
-    newLog.push(`🦋 ${b.player.name}의 「${skill.name}」! ${b.enemy.name}에게 ${dmg}의 피해!`);
-    if (skill.selfDamage){ pHP = Math.max(0, pHP-skill.selfDamage); newLog.push(`   … ${b.player.name}도 ${skill.selfDamage}만큼 힘이 빠졌다.`); }
-    if (skill.heal){ pHP = Math.min(b.player.stats.hp, pHP+skill.heal); newLog.push(`   … ${b.player.name}가 체력을 ${skill.heal} 회복했다.`); }
+  if (skill.selfDamage){
+    if (side === "player") b.playerHP = Math.max(0, b.playerHP - skill.selfDamage);
+    else b.enemyHP = Math.max(0, b.enemyHP - skill.selfDamage);
+    b.log = [...b.log, `   … ${attacker.name}도 ${skill.selfDamage}만큼 힘이 빠졌다.`];
   }
-  function doEnemyHit(){
-    const dmg = calcDamage(b.enemy, b.player, enemySkill, eMods.atkMult, pMods.defMult);
-    pHP = Math.max(0, pHP - dmg);
-    newLog.push(`🐜 ${b.enemy.name}의 「${enemySkill.name}」! ${b.player.name}에게 ${dmg}의 피해!`);
-    if (enemySkill.selfDamage){ eHP = Math.max(0, eHP-enemySkill.selfDamage); newLog.push(`   … ${b.enemy.name}도 ${enemySkill.selfDamage}만큼 힘이 빠졌다.`); }
-    if (enemySkill.heal){ eHP = Math.min(b.enemy.stats.hp, eHP+enemySkill.heal); newLog.push(`   … ${b.enemy.name}가 체력을 ${enemySkill.heal} 회복했다.`); }
+  if (skill.heal){
+    if (side === "player") b.playerHP = Math.min(b.player.stats.hp, b.playerHP + skill.heal);
+    else b.enemyHP = Math.min(b.enemy.stats.hp, b.enemyHP + skill.heal);
+    b.log = [...b.log, `   … ${attacker.name}가 체력을 ${skill.heal} 회복했다.`];
   }
+  render();
 
-  if (playerFirst){ doPlayerHit(); if (eHP>0) doEnemyHit(); }
-  else { doEnemyHit(); if (pHP>0) doPlayerHit(); }
-
-  setTimeout(()=>{
-    b.playerHP = pHP; b.enemyHP = eHP;
-    b.log = [...b.log, ...newLog];
-    if (eHP<=0 || pHP<=0){
-      const w = (eHP<=0 && pHP<=0) ? "무승부" : (eHP<=0 ? b.player.name : b.enemy.name);
+  setTimeout(() => {
+    if (b.enemyHP <= 0 || b.playerHP <= 0){
+      const w = (b.enemyHP<=0 && b.playerHP<=0) ? "무승부" : (b.enemyHP<=0 ? b.player.name : b.enemy.name);
       b.winner = w;
       b.log = [...b.log, w==="무승부" ? "🤝 무승부!" : `🏆 ${w}의 승리!`];
       b.phase = "result";
+      b.busy = false;
+      render();
+      return;
     }
+    b.turnIndex = (b.turnIndex + 1) % 2;
+    if (b.turnIndex === 0) b.round++;
     b.busy = false;
     render();
-  }, 250);
+    maybeAutoTurn();
+  }, 700);
 }
 
 /* ============================== 데이터 로드 & 시작 ============================== */
