@@ -495,10 +495,12 @@ function applyFatigue(ctx, side, streak){
   if (frac <= 0) return;
   const b = state.battle;
   const self = side === "player" ? b.player : b.enemy;
+  const curHP = side === "player" ? ctx.pHP : ctx.eHP;
+  if (curHP <= 0) return; // 이미 이번 라운드 상대 공격으로 쓰러졌다면 피로로 되살리지 않는다
   const dmg = Math.max(2, Math.round(self.stats.hp * frac));
-  if (side === "player") ctx.pHP = Math.max(1, ctx.pHP - dmg);
-  else ctx.eHP = Math.max(1, ctx.eHP - dmg);
-  ctx.log.push(L(`   … ${self.name}가 연속 공격(${streak}회째)으로 지쳐 체력을 ${dmg} 잃었다.`, "fatigue"));
+  const newHP = Math.max(1, curHP - dmg);
+  if (side === "player") ctx.pHP = newHP; else ctx.eHP = newHP;
+  ctx.log.push(L(`   … ${self.name}가 연속 공격(${streak}회째)으로 지쳐 체력을 ${curHP - newHP} 잃었다.`, "fatigue"));
 }
 
 
