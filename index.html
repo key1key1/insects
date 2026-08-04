@@ -404,10 +404,10 @@ function defenseVariant(insect, skill){
   return skill.power >= maxPower ? "evasive" : "recovery";
 }
 /* 방어기가 실제로 회복시킬 양: 데이터에 heal이 명시돼 있으면 그 값 우선,
-   아니면 '회복형'일 때만 상대 최대체력의 10%만큼 자동 회복 */
+   아니면 '회복형'일 때만 상대 최대체력의 7%만큼 자동 회복 */
 function effectiveDefenseHeal(insect, skill){
   if (skill.heal) return skill.heal;
-  if (defenseVariant(insect, skill) === "recovery") return Math.max(4, Math.round(insect.stats.hp * 0.10));
+  if (defenseVariant(insect, skill) === "recovery") return Math.max(4, Math.round(insect.stats.hp * 0.07));
   return 0;
 }
 /* 기술 옆에 붙일 짧은 특성 단어 (버튼에 표시용) */
@@ -507,6 +507,8 @@ function applyFatigue(ctx, side, streak){
 /* ============================== 즐겨찾기 (localStorage, 최대 10종) ============================== */
 const FAV_KEY = "insectFavorites";
 const FAV_MAX = 10;
+/* 대결이 회복/방어로 끝없이 늘어지는 걸 막는 안전장치용 라운드 상한 (평균 8~9라운드보다 훨씬 넉넉하게 설정) */
+const BATTLE_ROUND_CAP = 30;
 function getFavorites(){
   try{ const v = JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); return Array.isArray(v) ? v : []; }
   catch(e){ return []; }
@@ -751,6 +753,7 @@ function renderBattle(){
         <div class="action-row" style="flex-direction:column;align-items:center;gap:10px">
           <button class="btn btn-sky" data-set-mode="pvc" style="width:100%;max-width:320px">🤖 컴퓨터와 대결 (1인용)</button>
           <button class="btn btn-coral" data-set-mode="pvp" style="width:100%;max-width:320px">🧑‍🤝‍🧑 친구와 대결 (2인용 · 같은 기기)</button>
+          <button class="btn btn-ghost" data-random-both="1" style="width:100%;max-width:320px">🎲 랜덤 대결 (양쪽 다 랜덤 뽑기)</button>
         </div>
       </div>`;
   }
@@ -806,8 +809,7 @@ function renderBattle(){
           <div style="text-align:center;padding:30px 10px">
             <p style="font-size:2rem;margin:0 0 8px">🙈</p>
             <p style="font-family:'Jua',sans-serif;font-size:1.05rem;color:var(--leaf-dark)">플레이어 2에게 기기를 넘겨주세요</p>
-            <p style="font-size:.8rem;color:var(--ink-soft);margin:6px 0 16px">플레이어 1이 고른 기술은 보이지 않아요. 화면을 확인한 뒤 계속해주세요.</p>
-            <button class="btn btn-coral" data-continue-handoff="1">확인했어요, 계속하기 →</button>
+            <p style="font-size:.8rem;color:var(--ink-soft);margin:6px 0 0">플레이어 1이 고른 기술은 보이지 않아요. 잠시 후 자동으로 넘어가요...</p>
           </div>`;
       } else if (b.turnStage === "resolving"){
         bodyHtml = b.busy ? `
@@ -957,6 +959,18 @@ document.addEventListener("click", (e)=>{
     state.battle.pickOrderFilter = "all";
     render(); return;
   }
+  if (el = t("data-random-both")){
+    if (INSECTS.length < 2) return;
+    const first = INSECTS[Math.floor(Math.random()*INSECTS.length)];
+    const rest = INSECTS.filter(i=>i.id!==first.id);
+    const second = rest[Math.floor(Math.random()*rest.length)];
+    state.battle.mode = "pvc";
+    state.battle.player = first;
+    state.battle.enemy = second;
+    state.battle.phase = "draw-env";
+    state.battle.env = null;
+    render(); return;
+  }
   if (el = t("data-pick-insect")){
     const id = el.getAttribute("data-pick-insect");
     const role = el.getAttribute("data-pick-role");
@@ -978,12 +992,6 @@ document.addEventListener("click", (e)=>{
     const side = el.getAttribute("data-use-skill-side");
     const idx = Number(el.getAttribute("data-use-skill-idx"));
     chooseSkill(side, idx);
-    return;
-  }
-  if (el = t("data-continue-handoff")){
-    state.battle.turnStage = "p2-choose";
-    render();
-    maybeAnnounceTurn();
     return;
   }
   if (el = t("data-toggle-rules")){ state.battle.showRules = true; render(); return; }
@@ -1083,7 +1091,14 @@ function chooseSkill(side, idx){
       }, 700);
     } else {
       b.turnStage = "handoff";
+      b.busy = true;
       render();
+      setTimeout(() => {
+        b.turnStage = "p2-choose";
+        b.busy = false;
+        render();
+        maybeAnnounceTurn();
+      }, 1200);
     }
   } else {
     b.enemyChoice = b.enemy.skills[idx];
@@ -1202,8 +1217,8 @@ function resolveRound(){
   } else if (ctx.pSkill.type === "defense" && ctx.eSkill.type === "attack"){
     resolveAttackVsDefense(ctx, "enemy");
   } else {
-    const healP = effectiveDefenseHeal(b.player, ctx.pSkill) || Math.round(b.player.stats.hp * 0.08);
-    const healE = effectiveDefenseHeal(b.enemy, ctx.eSkill) || Math.round(b.enemy.stats.hp * 0.08);
+    const healP = effectiveDefenseHeal(b.player, ctx.pSkill) || Math.round(b.player.stats.hp * 0.05);
+    const healE = effectiveDefenseHeal(b.enemy, ctx.eSkill) || Math.round(b.enemy.stats.hp * 0.05);
     ctx.pHP = Math.min(b.player.stats.hp, ctx.pHP + healP);
     ctx.eHP = Math.min(b.enemy.stats.hp, ctx.eHP + healE);
     ctx.log.push(L(`🛡️ 둘 다 방어만 하며 견제하다 끝났다. ${b.player.name}은 체력 ${healP}, ${b.enemy.name}는 체력 ${healE}을 회복했다.`, "heal"));
@@ -1222,6 +1237,16 @@ function resolveRound(){
   if (b.enemyHP <= 0 || b.playerHP <= 0){
     const w = (b.enemyHP<=0 && b.playerHP<=0) ? "무승부" : (b.enemyHP<=0 ? b.player.name : b.enemy.name);
     b.winner = w;
+    ctx.log.push(L(w==="무승부" ? "🤝 무승부!" : `🏆 ${w}의 승리!`, w==="무승부" ? "draw" : "win"));
+    onRevealDone = () => { b.phase = "result"; b.busy = false; render(); };
+  } else if (b.round >= BATTLE_ROUND_CAP){
+    /* 안전장치: 아무리 회복·방어가 반복돼도 대결이 끝없이 이어지지 않도록,
+       상한 라운드에 도달하면 그 시점 체력 비율이 더 높은 쪽이 승리로 정해진다. */
+    const pRatio = b.playerHP / b.player.stats.hp;
+    const eRatio = b.enemyHP / b.enemy.stats.hp;
+    const w = Math.abs(pRatio - eRatio) < 0.02 ? "무승부" : (pRatio > eRatio ? b.player.name : b.enemy.name);
+    b.winner = w;
+    ctx.log.push(L(`⏱️ ${BATTLE_ROUND_CAP}라운드가 지나도록 승부가 나지 않아, 체력이 더 많이 남은 쪽으로 정해졌어요!`, "neutral"));
     ctx.log.push(L(w==="무승부" ? "🤝 무승부!" : `🏆 ${w}의 승리!`, w==="무승부" ? "draw" : "win"));
     onRevealDone = () => { b.phase = "result"; b.busy = false; render(); };
   } else {
